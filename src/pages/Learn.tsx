@@ -385,6 +385,16 @@ const Learn = () => {
             {lesson.done ? 'Урок пройден ✓ Перейти дальше' : 'Завершить урок'}
             <Icon name="ArrowRight" size={18} className="ml-1" />
           </Button>
+
+          <a
+            href="https://t.me/+RFFL7zzQh8I4MmZi"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 w-full h-11 rounded-xl border border-border text-sm font-medium text-muted-foreground hover:text-primary hover:border-primary/50 transition-colors"
+          >
+            <Icon name="LifeBuoy" size={17} />
+            Столкнулись с проблемой?
+          </a>
         </div>
         )}
 
