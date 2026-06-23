@@ -75,23 +75,23 @@ function checkPrint(raw: string): CheckResult {
     if (doubleQuotes === 0 && singleQuotes === 0) {
       // текст без кавычек
       if (/^[A-Za-z_]\w*$/.test(innerTrim)) {
-        hints.push(`Текст «${innerTrim}» написан без кавычек, поэтому Python ищет переменную с таким именем, а не выводит текст. Оберни текст в кавычки: print("${innerTrim}").`);
+        hints.push(`Текст «${innerTrim}» написан без кавычек, поэтому Python ищет переменную с таким именем, а не выводит текст. Оберни текст в кавычки.`);
       } else {
         hints.push('Текст внутри скобок нужно обернуть в кавычки — двойные "…" или одинарные \'…\'. Без кавычек Python не понимает, что это текст для вывода.');
       }
     } else if (doubleQuotes === 1 || singleQuotes === 1) {
-      hints.push('Кавычка не закрыта. Текст должен быть с двух сторон в кавычках: открывающая и закрывающая. Например: "Привет!".');
+      hints.push('Кавычка не закрыта. Текст должен быть с двух сторон в кавычках: открывающая и закрывающая.');
     } else if (!hasOpeningQuote) {
-      hints.push('Открывающая кавычка должна стоять сразу после «(». Например: print("Привет!").');
+      hints.push('Открывающая кавычка должна стоять сразу после открывающей скобки «(».');
     } else if (!hasClosingQuote) {
-      hints.push('Закрывающая кавычка должна стоять прямо перед «)». Например: print("Привет!").');
+      hints.push('Закрывающая кавычка должна стоять прямо перед закрывающей скобкой «)».');
     } else if (doubleQuotes % 2 !== 0) {
       hints.push('Двойные кавычки не парные — проверь, что каждая открывающая " имеет закрывающую.');
     } else if (singleQuotes % 2 !== 0) {
       hints.push("Одинарные кавычки не парные — проверь, что каждая открывающая ' имеет закрывающую.");
     }
   } else if (openCount > 0 && closeCount > 0) {
-    hints.push('Внутри скобок пусто. Напиши текст в кавычках, например: print("Привет!").');
+    hints.push('Внутри скобок пусто. Напиши текст в кавычках, который нужно вывести.');
   }
 
   // Если ошибок нет — всё верно
@@ -208,8 +208,8 @@ const CodeExamPanel = ({ courseId, courseTitle, unlocked, result, onResult }: Pr
       <div className="rounded-xl bg-accent/10 border border-accent/30 p-4 mb-5">
         <p className="text-sm">
           <span className="font-semibold">Задание:</span> напиши команду, которая выведет на экран
-          любой текст. Используй команду <code className="font-mono bg-secondary px-1.5 py-0.5 rounded text-primary">print</code> и
-          кавычки. Например: <code className="font-mono bg-secondary px-1.5 py-0.5 rounded">print("Привет!")</code>
+          любой текст по твоему выбору. Вспомни, какую команду для вывода текста ты изучил в уроках,
+          и примени её самостоятельно — это твой мини-экзамен.
         </p>
       </div>
 
@@ -227,7 +227,7 @@ const CodeExamPanel = ({ courseId, courseTitle, unlocked, result, onResult }: Pr
           onChange={(e) => setCode(e.target.value)}
           spellCheck={false}
           rows={3}
-          placeholder='Напиши здесь, например: print("Привет!")'
+          placeholder='Напиши свою команду здесь...'
           className="w-full bg-transparent text-green-400 font-mono text-sm p-4 outline-none resize-none placeholder:text-muted-foreground/50"
         />
       </div>
@@ -266,10 +266,6 @@ const CodeExamPanel = ({ courseId, courseTitle, unlocked, result, onResult }: Pr
               </li>
             ))}
           </ul>
-          <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border">
-            Подсказка-образец: <code className="font-mono bg-secondary px-1.5 py-0.5 rounded">print("Привет!")</code> —
-            имя команды, скобки и текст в кавычках.
-          </p>
         </div>
       )}
     </div>
