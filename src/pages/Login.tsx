@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import Icon from '@/components/ui/icon';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,8 +12,21 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
+  const [refCode, setRefCode] = useState('');
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { login } = useAuth();
+
+  useEffect(() => {
+    const ref = searchParams.get('ref');
+    if (ref) {
+      localStorage.setItem('codebase_ref', ref.toUpperCase());
+      setRefCode(ref.toUpperCase());
+    } else {
+      const saved = localStorage.getItem('codebase_ref') || '';
+      if (saved) setRefCode(saved);
+    }
+  }, [searchParams]);
 
   const sendCode = async () => {
     if (!email.includes('@')) {
@@ -43,8 +56,9 @@ const Login = () => {
     }
     setLoading(true);
     try {
-      const res = await authApi.verifyCode(email, code);
+      const res = await authApi.verifyCode(email, code, refCode);
       login(res.token, res.user);
+      if (res.is_new && refCode) localStorage.removeItem('codebase_ref');
       toast.success(res.is_new ? 'Добро пожаловать в CodeBase! 🚀' : 'С возвращением!');
       navigate('/cabinet');
     } catch (e) {
@@ -73,6 +87,14 @@ const Login = () => {
               <p className="text-sm text-muted-foreground mb-6">
                 Введите email — пришлём код для входа. Если аккаунта нет, создадим автоматически.
               </p>
+              {refCode && (
+                <div className="flex items-center gap-2 rounded-xl bg-accent/10 border border-accent/30 p-3 mb-5">
+                  <Icon name="Gift" size={18} className="text-accent shrink-0" />
+                  <p className="text-xs text-foreground">
+                    Вы пришли по приглашению! Купите любой курс и получите <span className="font-bold text-accent">+150 XP</span> в подарок.
+                  </p>
+                </div>
+              )}
               <label className="text-sm font-medium mb-2 block">Email</label>
               <Input
                 type="email"

@@ -24,12 +24,20 @@ export interface ApiCourse {
   completed_lessons?: number;
 }
 
+export interface Referral {
+  code: string;
+  invited_total: number;
+  invited_bought: number;
+  xp_earned: number;
+}
+
 export interface DashboardState {
   user: { id: number; email: string; name: string; avatar: string; balance: number; xp: number };
   my_courses: ApiCourse[];
   available_courses: ApiCourse[];
   recommended: ApiCourse[];
   stats: { courses: number; lessons_done: number; completed_courses: number };
+  referral: Referral;
 }
 
 export interface QuizQuestion {
@@ -99,8 +107,8 @@ async function post(url: string, body: object, auth = false) {
 export const authApi = {
   requestCode: (email: string) =>
     post(AUTH_URL, { action: 'request_code', email }) as Promise<{ ok: boolean; sent: boolean; demo_code?: string }>,
-  verifyCode: (email: string, code: string) =>
-    post(AUTH_URL, { action: 'verify_code', email, code }) as Promise<{ token: string; is_new: boolean; user: DashboardState['user'] }>,
+  verifyCode: (email: string, code: string, ref?: string) =>
+    post(AUTH_URL, { action: 'verify_code', email, code, ref: ref || '' }) as Promise<{ token: string; is_new: boolean; user: DashboardState['user'] }>,
   logout: async () => {
     try {
       await fetch(AUTH_URL, {

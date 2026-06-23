@@ -78,8 +78,14 @@ const Cabinet = () => {
     );
   }
 
-  const { user, my_courses, available_courses, recommended, stats } = state;
+  const { user, my_courses, available_courses, recommended, stats, referral } = state;
   const initials = user.name.slice(0, 2).toUpperCase();
+  const refLink = `${window.location.origin}/login?ref=${referral.code}`;
+
+  const copyRef = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success('Скопировано в буфер обмена');
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -138,6 +144,7 @@ const Cabinet = () => {
             <TabsTrigger value="courses">Мои курсы</TabsTrigger>
             <TabsTrigger value="catalog">Каталог</TabsTrigger>
             <TabsTrigger value="balance">Баланс</TabsTrigger>
+            <TabsTrigger value="referral">Друзья</TabsTrigger>
             <TabsTrigger value="settings">Профиль</TabsTrigger>
           </TabsList>
 
@@ -281,6 +288,79 @@ const Cabinet = () => {
               <p className="text-xs text-muted-foreground mt-3">
                 Минимальная сумма обмена — 500 XP. Зарабатывай XP, проходя уроки и тесты.
               </p>
+            </div>
+          </TabsContent>
+
+          {/* РЕФЕРАЛЬНАЯ ПРОГРАММА */}
+          <TabsContent value="referral" className="space-y-5">
+            <div className="glass rounded-2xl p-8 max-w-2xl mx-auto relative overflow-hidden">
+              <div className="absolute -top-12 -right-12 w-48 h-48 bg-accent/15 rounded-full blur-3xl" />
+              <div className="relative">
+                <div className="flex items-center gap-2 mb-2">
+                  <Icon name="Gift" size={22} className="text-accent" />
+                  <h3 className="font-bold text-xl">Приглашай друзей — получай XP</h3>
+                </div>
+                <p className="text-sm text-muted-foreground mb-6">
+                  Поделись ссылкой. Когда друг купит любой курс, ты получишь <span className="text-accent font-bold">+300 XP</span>,
+                  а он — <span className="text-accent font-bold">+150 XP</span> в подарок.
+                </p>
+
+                {/* Статистика */}
+                <div className="grid grid-cols-3 gap-3 mb-6">
+                  {[
+                    { v: referral.invited_total, l: 'приглашено' },
+                    { v: referral.invited_bought, l: 'купили курс' },
+                    { v: referral.xp_earned, l: 'XP заработано', accent: true },
+                  ].map((s) => (
+                    <div key={s.l} className="text-center bg-background/40 rounded-xl px-3 py-4">
+                      <div className={`font-mono font-bold text-2xl ${s.accent ? 'text-accent' : 'text-primary'}`}>{s.v}</div>
+                      <div className="text-xs text-muted-foreground mt-1">{s.l}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Ссылка */}
+                <label className="text-sm font-medium mb-2 block">Твоя реферальная ссылка</label>
+                <div className="flex gap-2 mb-4">
+                  <Input value={refLink} readOnly
+                    className="h-12 bg-background/60 border-border font-mono text-sm" />
+                  <Button onClick={() => copyRef(refLink)} className="h-12 shrink-0 font-semibold glow-green">
+                    <Icon name="Copy" size={16} className="mr-1.5" /> Копировать
+                  </Button>
+                </div>
+
+                {/* Код */}
+                <div className="flex items-center justify-between rounded-xl bg-background/50 border border-border p-4">
+                  <div>
+                    <div className="text-xs text-muted-foreground">Промокод-приглашение</div>
+                    <div className="font-mono font-bold text-lg tracking-widest text-accent">{referral.code}</div>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => copyRef(referral.code)}
+                    className="border-border">
+                    <Icon name="Copy" size={14} className="mr-1" /> Код
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Как это работает */}
+            <div className="glass rounded-2xl p-6 max-w-2xl mx-auto">
+              <h4 className="font-bold mb-4">Как это работает</h4>
+              <div className="space-y-3">
+                {[
+                  { i: 'Share2', t: 'Отправь ссылку другу любым способом' },
+                  { i: 'UserPlus', t: 'Друг регистрируется по твоей ссылке' },
+                  { i: 'ShoppingCart', t: 'Друг покупает любой курс' },
+                  { i: 'Zap', t: 'Ты получаешь +300 XP, друг +150 XP' },
+                ].map((step, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-accent/15 flex items-center justify-center shrink-0">
+                      <Icon name={step.i} size={17} className="text-accent" />
+                    </div>
+                    <span className="text-sm text-muted-foreground">{step.t}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </TabsContent>
 

@@ -150,7 +150,7 @@ def build_lessons(cur, user_id, course_id):
 
 
 def build_state(cur, user_id):
-    cur.execute("SELECT id, email, name, avatar, balance, xp FROM users WHERE id=%s", (user_id,))
+    cur.execute("SELECT id, email, name, avatar, balance, xp, ref_code FROM users WHERE id=%s", (user_id,))
     user = cur.fetchone()
 
     cur.execute("SELECT * FROM courses ORDER BY price")
@@ -191,6 +191,21 @@ def build_state(cur, user_id):
         'completed_courses': sum(1 for c in my_courses if c['progress'] == 100),
     }
 
+    # Реферальная статистика
+    cur.execute("SELECT COUNT(*) AS cnt FROM users WHERE referred_by=%s", (user_id,))
+    invited_total = cur.fetchone()['cnt']
+    cur.execute(
+        "SELECT COUNT(*) AS cnt FROM users WHERE referred_by=%s AND ref_rewarded=TRUE",
+        (user_id,)
+    )
+    invited_bought = cur.fetchone()['cnt']
+    referral = {
+        'code': user['ref_code'],
+        'invited_total': invited_total,
+        'invited_bought': invited_bought,
+        'xp_earned': invited_bought * 300,
+    }
+
     return {
         'user': {'id': user['id'], 'email': user['email'], 'name': user['name'],
                  'avatar': user['avatar'], 'balance': user['balance'], 'xp': user['xp']},
@@ -198,6 +213,7 @@ def build_state(cur, user_id):
         'available_courses': available,
         'recommended': recommended,
         'stats': stats,
+        'referral': referral,
     }
 
 
@@ -271,6 +287,16 @@ def handler(event: dict, context) -> dict:
                 "ON CONFLICT (user_id, course_id) DO NOTHING",
                 (user_id, course_id)
             )
+            # Реферальная награда за первую покупку приглашённого пользователя
+            cur.execute("SELECT referred_by, ref_rewarded FROM users WHERE id=%s", (user_id,))
+            urow = cur.fetchone()
+            if urow and urow['referred_by'] and not urow['ref_rewarded']:
+                referrer_id = urow['referred_by']
+                # +150 XP покупателю
+                change_xp(cur, user_id, 150)
+                # +300 XP пригласившему
+                change_xp(cur, referrer_id, 300)
+                cur.execute("UPDATE users SET ref_rewarded = TRUE WHERE id=%s", (user_id,))
             conn.commit()
             return {'statusCode': 200, 'headers': cors_headers(),
                     'body': json.dumps(build_state(cur, user_id))}

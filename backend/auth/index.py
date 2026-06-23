@@ -92,10 +92,19 @@ def handler(event: dict, context) -> dict:
             is_new = False
             if not user:
                 default_name = email.split('@')[0]
+                new_ref_code = secrets.token_hex(4).upper()
+                # реферальный код пригласившего (если есть)
+                ref = (body.get('ref') or '').strip().upper()
+                referred_by = None
+                if ref:
+                    cur.execute("SELECT id FROM users WHERE ref_code=%s", (ref,))
+                    rrow = cur.fetchone()
+                    if rrow:
+                        referred_by = rrow[0]
                 cur.execute(
-                    "INSERT INTO users (email, name) VALUES (%s, %s) "
-                    "RETURNING id, name, avatar, balance",
-                    (email, default_name)
+                    "INSERT INTO users (email, name, ref_code, referred_by) "
+                    "VALUES (%s, %s, %s, %s) RETURNING id, name, avatar, balance",
+                    (email, default_name, new_ref_code, referred_by)
                 )
                 user = cur.fetchone()
                 is_new = True
