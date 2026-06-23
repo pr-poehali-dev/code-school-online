@@ -211,6 +211,16 @@ const Learn = () => {
               onResult={(r: ExamResult) => setData({ ...data, exam_result: r })}
             />
           )}
+
+          <a
+            href="https://t.me/+RFFL7zzQh8I4MmZi"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 w-full h-11 rounded-xl border border-border text-sm font-medium text-muted-foreground hover:text-primary hover:border-primary/50 transition-colors"
+          >
+            <Icon name="LifeBuoy" size={17} />
+            Столкнулись с проблемой?
+          </a>
         </div>
         ) : (
         <div className="lg:col-span-2 space-y-5">
