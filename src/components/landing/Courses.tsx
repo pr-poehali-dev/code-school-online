@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import Icon from '@/components/ui/icon';
 import { Button } from '@/components/ui/button';
 import { courses } from '@/data/courses';
@@ -57,10 +58,12 @@ const Courses = () => {
 
                 <div className="flex items-center justify-between pt-4 border-t border-border">
                   <span className="font-mono font-bold text-lg">{c.price} ₽</span>
-                  <Button size="sm" className="font-semibold rounded-lg">
-                    Купить
-                    <Icon name="ArrowRight" size={15} className="ml-1" />
-                  </Button>
+                  <Link to="/login">
+                    <Button size="sm" className="font-semibold rounded-lg">
+                      Купить
+                      <Icon name="ArrowRight" size={15} className="ml-1" />
+                    </Button>
+                  </Link>
                 </div>
               </div>
             </div>

@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import Icon from '@/components/ui/icon';
 import { Button } from '@/components/ui/button';
 
@@ -32,10 +33,12 @@ const Hero = () => {
           </p>
 
           <div className="flex flex-wrap gap-4 mb-12 animate-fade-up" style={{ animationDelay: '0.3s' }}>
-            <Button size="lg" className="font-semibold glow-green h-12 px-7">
-              Выбрать курс
-              <Icon name="ArrowRight" size={18} className="ml-1" />
-            </Button>
+            <Link to="/login">
+              <Button size="lg" className="font-semibold glow-green h-12 px-7">
+                Выбрать курс
+                <Icon name="ArrowRight" size={18} className="ml-1" />
+              </Button>
+            </Link>
             <Button size="lg" variant="outline" className="font-semibold h-12 px-7 border-border">
               <Icon name="Play" size={16} className="mr-1" />
               Как это работает

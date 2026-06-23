@@ -1,0 +1,21 @@
+{
+  "tests": [
+    {
+      "name": "Запрос кода на email",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "request_code", "email": "test@example.com"},
+      "expectedStatus": 200,
+      "expectedBody": {"ok": true},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Неверный email",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "request_code", "email": "bad"},
+      "expectedStatus": 400,
+      "bodyMatcher": "partial"
+    }
+  ]
+}
