@@ -24,7 +24,25 @@ function checkPrint(raw: string): CheckResult {
   const code = raw.trim();
 
   if (!code) {
-    return { ok: false, hints: ['Поле пустое. Напиши команду, например: print("Привет!")'] };
+    return { ok: false, hints: ['Поле пустое. Напиши команду для вывода текста.'] };
+  }
+
+  // 0. Должна быть ровно одна команда в одной строке
+  const nonEmptyLines = code.split('\n').map((l) => l.trim()).filter((l) => l.length > 0);
+  if (nonEmptyLines.length > 1) {
+    return {
+      ok: false,
+      hints: ['Здесь нужна только одна команда. Ты написал несколько строк — оставь одну команду вывода текста, остальные удали.'],
+    };
+  }
+
+  // Несколько вызовов в одной строке тоже не годятся для этого задания
+  const openCountAll = (code.match(/\(/g) || []).length;
+  if (openCountAll > 1) {
+    return {
+      ok: false,
+      hints: ['В строке несколько команд. Для этого задания нужна только одна команда вывода текста — оставь одну, лишнее убери.'],
+    };
   }
 
   // 1. Проверяем имя функции print
