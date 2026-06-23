@@ -38,6 +38,18 @@ export interface QuizQuestion {
   correct: number;
 }
 
+export interface LessonStep {
+  title: string;
+  text: string;
+}
+
+export interface Software {
+  name: string;
+  desc: string;
+  url: string;
+  install: string;
+}
+
 export interface Lesson {
   id: number;
   position: number;
@@ -45,6 +57,9 @@ export interface Lesson {
   duration: string;
   video_url: string;
   content: string;
+  intro: string;
+  steps: LessonStep[];
+  software: Software[];
   quiz: QuizQuestion[];
   done: boolean;
   locked: boolean;

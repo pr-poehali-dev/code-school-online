@@ -3,9 +3,58 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import Icon from '@/components/ui/icon';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
+} from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { dashboardApi, CourseLessons, Lesson } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
+
+const SoftwareDialog = ({ lesson }: { lesson: Lesson }) => (
+  <Dialog>
+    <DialogTrigger asChild>
+      <Button variant="outline" size="sm" className="border-primary/40 text-primary hover:bg-primary/10">
+        <Icon name="Wrench" size={15} className="mr-1.5" />
+        Что нужно для урока
+      </Button>
+    </DialogTrigger>
+    <DialogContent className="glass border-border max-w-lg max-h-[85vh] overflow-y-auto">
+      <DialogHeader>
+        <DialogTitle className="flex items-center gap-2">
+          <Icon name="Download" size={20} className="text-primary" />
+          Инструменты для урока
+        </DialogTitle>
+      </DialogHeader>
+      <p className="text-sm text-muted-foreground -mt-1 mb-2">
+        Здесь всё, что понадобится. Можно работать прямо в браузере — устанавливать ничего не обязательно.
+      </p>
+      <div className="space-y-4">
+        {lesson.software.map((s, i) => (
+          <div key={i} className="rounded-xl bg-background/50 border border-border p-4">
+            <div className="flex items-start justify-between gap-3 mb-2">
+              <div>
+                <div className="font-bold flex items-center gap-2">
+                  <Icon name="Package" size={16} className="text-primary" />
+                  {s.name}
+                </div>
+                <p className="text-sm text-muted-foreground mt-1">{s.desc}</p>
+              </div>
+            </div>
+            <div className="rounded-lg bg-background/60 p-3 mt-2">
+              <div className="text-xs font-mono text-primary mb-1.5">// как установить</div>
+              <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">{s.install}</p>
+            </div>
+            <a href={s.url} target="_blank" rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline mt-3 font-medium">
+              <Icon name="ExternalLink" size={14} />
+              Открыть {s.name}
+            </a>
+          </div>
+        ))}
+      </div>
+    </DialogContent>
+  </Dialog>
+);
 
 const Learn = () => {
   const { courseId = '' } = useParams();
@@ -130,24 +179,61 @@ const Learn = () => {
                 allowFullScreen
               />
             </div>
-            <div className="p-5">
-              <div className="font-mono text-xs text-primary mb-1">
-                Урок {lesson.position} · {lesson.duration}
+            <div className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <div className="font-mono text-xs text-primary mb-1">
+                  Урок {lesson.position} · {lesson.duration}
+                </div>
+                <h1 className="text-xl font-bold">{lesson.title}</h1>
               </div>
-              <h1 className="text-xl font-bold">{lesson.title}</h1>
+              {lesson.software.length > 0 && <SoftwareDialog lesson={lesson} />}
             </div>
           </div>
 
-          {/* Конспект */}
-          <div className="glass rounded-2xl p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Icon name="FileText" size={20} className="text-primary" />
-              <h3 className="font-bold text-lg">Конспект урока</h3>
+          {/* Вступление "для чайников" */}
+          {lesson.intro && (
+            <div className="glass rounded-2xl p-5 flex gap-3 border-l-2 border-l-primary">
+              <Icon name="Lightbulb" size={20} className="text-primary shrink-0 mt-0.5" />
+              <p className="text-sm text-muted-foreground leading-relaxed">{lesson.intro}</p>
             </div>
-            <div className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line font-sans">
-              {lesson.content}
+          )}
+
+          {/* Пошаговая инструкция */}
+          {lesson.steps.length > 0 && (
+            <div className="glass rounded-2xl p-6">
+              <div className="flex items-center gap-2 mb-5">
+                <Icon name="ListOrdered" size={20} className="text-primary" />
+                <h3 className="font-bold text-lg">Пошагово</h3>
+                <span className="font-mono text-xs text-muted-foreground ml-auto">для новичков</span>
+              </div>
+              <ol className="space-y-4">
+                {lesson.steps.map((s, i) => (
+                  <li key={i} className="flex gap-4">
+                    <div className="w-8 h-8 rounded-full bg-primary/15 text-primary font-mono font-bold flex items-center justify-center shrink-0">
+                      {i + 1}
+                    </div>
+                    <div className="pt-0.5">
+                      <div className="font-semibold mb-1">{s.title}</div>
+                      <p className="text-sm text-muted-foreground leading-relaxed">{s.text}</p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
             </div>
-          </div>
+          )}
+
+          {/* Конспект (краткий итог) */}
+          {lesson.content && (
+            <div className="glass rounded-2xl p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Icon name="FileText" size={20} className="text-primary" />
+                <h3 className="font-bold text-lg">Памятка</h3>
+              </div>
+              <div className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line font-sans">
+                {lesson.content}
+              </div>
+            </div>
+          )}
 
           {/* Тест */}
           {lesson.quiz.length > 0 && (

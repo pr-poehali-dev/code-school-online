@@ -1,0 +1,4 @@
+-- Добавляем пошаговые инструкции и софт к урокам
+ALTER TABLE lessons ADD COLUMN IF NOT EXISTS steps TEXT NOT NULL DEFAULT '[]';
+ALTER TABLE lessons ADD COLUMN IF NOT EXISTS software TEXT NOT NULL DEFAULT '[]';
+ALTER TABLE lessons ADD COLUMN IF NOT EXISTS intro TEXT NOT NULL DEFAULT '';

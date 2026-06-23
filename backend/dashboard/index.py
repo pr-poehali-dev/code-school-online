@@ -54,8 +54,8 @@ def build_lessons(cur, user_id, course_id):
     done_count = prow['completed_lessons'] if prow else 0
 
     cur.execute(
-        "SELECT id, position, title, duration, video_url, content FROM lessons "
-        "WHERE course_id=%s ORDER BY position", (course_id,)
+        "SELECT id, position, title, duration, video_url, content, intro, steps, software "
+        "FROM lessons WHERE course_id=%s ORDER BY position", (course_id,)
     )
     lesson_rows = cur.fetchall()
 
@@ -69,6 +69,14 @@ def build_lessons(cur, user_id, course_id):
             {'q': q['question'], 'options': q['options'].split('|||'), 'correct': q['correct']}
             for q in cur.fetchall()
         ]
+        try:
+            steps = json.loads(l['steps'] or '[]')
+        except (ValueError, TypeError):
+            steps = []
+        try:
+            software = json.loads(l['software'] or '[]')
+        except (ValueError, TypeError):
+            software = []
         lessons.append({
             'id': l['id'],
             'position': l['position'],
@@ -76,6 +84,9 @@ def build_lessons(cur, user_id, course_id):
             'duration': l['duration'],
             'video_url': l['video_url'],
             'content': l['content'],
+            'intro': l['intro'],
+            'steps': steps,
+            'software': software,
             'quiz': quiz,
             'done': idx < done_count,
             'locked': not owned or idx > done_count,
