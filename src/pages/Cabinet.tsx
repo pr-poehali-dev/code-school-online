@@ -14,6 +14,12 @@ import { useAuth } from '@/context/AuthContext';
 
 const topupOptions = [500, 1000, 2000, 5000];
 
+const tiers = [
+  { key: 'starter', emoji: '🚀', title: 'Без опыта', subtitle: 'Бесплатные разогревающие уроки для самого начала', bg: 'bg-primary/15' },
+  { key: 'base', emoji: '📘', title: 'Базовый уровень', subtitle: 'Основные курсы — учим программировать с нуля', bg: 'bg-accent/15' },
+  { key: 'pro', emoji: '⚡', title: 'Опытный уровень', subtitle: 'Самостоятельная практика после прохождения React', bg: 'bg-yellow-500/15' },
+];
+
 const Cabinet = () => {
   const { isAuthed, loading: authLoading, logout, setUser } = useAuth();
   const navigate = useNavigate();
@@ -200,18 +206,35 @@ const Cabinet = () => {
           </TabsContent>
 
           {/* КАТАЛОГ */}
-          <TabsContent value="catalog">
+          <TabsContent value="catalog" className="space-y-8">
             {available_courses.length === 0 ? (
               <div className="glass rounded-2xl p-12 text-center">
                 <div className="text-5xl mb-4">🏆</div>
                 <h3 className="font-bold text-lg">Ты купил все курсы!</h3>
               </div>
             ) : (
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {available_courses.map((c) => (
-                  <CourseCard key={c.id} c={c} busy={busy} onBuy={buy} balance={user.balance} />
-                ))}
-              </div>
+              tiers.map((tier) => {
+                const list = available_courses.filter((c) => c.tier === tier.key);
+                if (list.length === 0) return null;
+                return (
+                  <div key={tier.key}>
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl ${tier.bg}`}>
+                        {tier.emoji}
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-lg leading-tight">{tier.title}</h3>
+                        <p className="text-xs text-muted-foreground">{tier.subtitle}</p>
+                      </div>
+                    </div>
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {list.map((c) => (
+                        <CourseCard key={c.id} c={c} busy={busy} onBuy={buy} balance={user.balance} />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })
             )}
           </TabsContent>
 
@@ -393,14 +416,26 @@ const Cabinet = () => {
 const CourseCard = ({ c, busy, onBuy, balance }: {
   c: ApiCourse; busy: string; onBuy: (c: ApiCourse) => void; balance: number;
 }) => {
-  const canAfford = balance >= c.price;
+  const isFree = c.price === 0;
+  const isLocked = !!c.locked;
+  const canAfford = isFree || balance >= c.price;
   return (
-    <div className="glass rounded-2xl p-5 relative overflow-hidden flex flex-col">
+    <div className={`glass rounded-2xl p-5 relative overflow-hidden flex flex-col ${isLocked ? 'opacity-80' : ''}`}>
       <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full blur-3xl opacity-40"
         style={{ background: `hsl(${c.color})` }} />
       <div className="relative flex flex-col flex-1">
-        <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl mb-3"
-          style={{ background: `hsl(${c.color} / 0.15)` }}>{c.icon}</div>
+        <div className="flex items-start justify-between mb-3">
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl"
+            style={{ background: `hsl(${c.color} / 0.15)` }}>{c.icon}</div>
+          {isFree && (
+            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-primary/15 text-primary">Бесплатно</span>
+          )}
+          {isLocked && (
+            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-secondary text-muted-foreground flex items-center gap-1">
+              <Icon name="Lock" size={11} /> Закрыто
+            </span>
+          )}
+        </div>
         <div className="font-bold mb-1">{c.title}</div>
         <p className="text-xs text-muted-foreground mb-3 flex-1">{c.desc}</p>
         <div className="flex items-center gap-3 text-xs text-muted-foreground font-mono mb-4">
@@ -408,45 +443,55 @@ const CourseCard = ({ c, busy, onBuy, balance }: {
           <span className="flex items-center gap-1"><Icon name="Clock" size={13} /> {c.hours}ч</span>
         </div>
         <div className="flex items-center justify-between pt-3 border-t border-border">
-          <span className="font-mono font-bold">{c.price} ₽</span>
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button size="sm" className="font-semibold">Купить</Button>
-            </DialogTrigger>
-            <DialogContent className="glass border-border">
-              <DialogHeader>
-                <DialogTitle>Покупка курса</DialogTitle>
-              </DialogHeader>
-              <div className="py-2">
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="text-3xl">{c.icon}</span>
-                  <div>
-                    <div className="font-bold">{c.title}</div>
-                    <div className="text-sm text-muted-foreground">{c.lessons} уроков · {c.hours} часов</div>
+          <span className={`font-mono font-bold ${isFree ? 'text-primary' : ''}`}>
+            {isFree ? '0 ₽' : `${c.price} ₽`}
+          </span>
+          {isLocked ? (
+            <Button size="sm" variant="outline" disabled className="font-semibold border-border">
+              <Icon name="Lock" size={13} className="mr-1" /> Пройди React
+            </Button>
+          ) : (
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button size="sm" className="font-semibold">{isFree ? 'Начать' : 'Купить'}</Button>
+              </DialogTrigger>
+              <DialogContent className="glass border-border">
+                <DialogHeader>
+                  <DialogTitle>{isFree ? 'Начать курс' : 'Покупка курса'}</DialogTitle>
+                </DialogHeader>
+                <div className="py-2">
+                  <div className="flex items-center gap-3 mb-4">
+                    <span className="text-3xl">{c.icon}</span>
+                    <div>
+                      <div className="font-bold">{c.title}</div>
+                      <div className="text-sm text-muted-foreground">{c.lessons} уроков · {c.hours} часов</div>
+                    </div>
                   </div>
+                  <div className="flex justify-between text-sm py-2 border-t border-border">
+                    <span className="text-muted-foreground">Стоимость</span>
+                    <span className="font-mono font-bold">{isFree ? 'Бесплатно' : `${c.price} ₽`}</span>
+                  </div>
+                  {!isFree && (
+                    <div className="flex justify-between text-sm py-2 border-t border-border">
+                      <span className="text-muted-foreground">Ваш баланс</span>
+                      <span className={`font-mono font-bold ${canAfford ? '' : 'text-destructive'}`}>
+                        {balance.toLocaleString('ru')} ₽
+                      </span>
+                    </div>
+                  )}
+                  {!canAfford && (
+                    <p className="text-xs text-destructive mt-2">Недостаточно средств — пополните баланс.</p>
+                  )}
                 </div>
-                <div className="flex justify-between text-sm py-2 border-t border-border">
-                  <span className="text-muted-foreground">Стоимость</span>
-                  <span className="font-mono font-bold">{c.price} ₽</span>
-                </div>
-                <div className="flex justify-between text-sm py-2 border-t border-border">
-                  <span className="text-muted-foreground">Ваш баланс</span>
-                  <span className={`font-mono font-bold ${canAfford ? '' : 'text-destructive'}`}>
-                    {balance.toLocaleString('ru')} ₽
-                  </span>
-                </div>
-                {!canAfford && (
-                  <p className="text-xs text-destructive mt-2">Недостаточно средств — пополните баланс.</p>
-                )}
-              </div>
-              <DialogFooter>
-                <Button disabled={!canAfford || busy === c.id} onClick={() => onBuy(c)}
-                  className="w-full font-semibold glow-green">
-                  {canAfford ? `Оплатить ${c.price} ₽ с баланса` : 'Недостаточно средств'}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+                <DialogFooter>
+                  <Button disabled={!canAfford || busy === c.id} onClick={() => onBuy(c)}
+                    className="w-full font-semibold glow-green">
+                    {isFree ? 'Начать бесплатно' : canAfford ? `Оплатить ${c.price} ₽ с баланса` : 'Недостаточно средств'}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
       </div>
     </div>

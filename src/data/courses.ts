@@ -10,9 +10,24 @@ export interface Course {
   price: number;
   desc: string;
   tags: string[];
+  tier: 'starter' | 'base' | 'pro';
 }
 
 export const courses: Course[] = [
+  {
+    id: 'starter-intro',
+    title: 'Старт без опыта',
+    lang: 'Основы',
+    icon: '🚀',
+    color: '152 90% 52%',
+    level: 'Без опыта',
+    lessons: 3,
+    hours: 1,
+    price: 0,
+    desc: 'Бесплатные разогревающие уроки: познакомишься с интерфейсом и напишешь первый код.',
+    tags: ['Бесплатно', 'Старт', 'Для новичков'],
+    tier: 'starter',
+  },
   {
     id: 'python',
     title: 'Python с нуля',
@@ -25,6 +40,7 @@ export const courses: Course[] = [
     price: 1490,
     desc: 'Самый дружелюбный язык для старта. Переменные, циклы, функции и первый проект.',
     tags: ['Основы', 'Бэкенд', 'Автоматизация'],
+    tier: 'base',
   },
   {
     id: 'javascript',
@@ -38,6 +54,7 @@ export const courses: Course[] = [
     price: 1790,
     desc: 'Оживи сайты: DOM, события, анимации и интерактив прямо в браузере.',
     tags: ['Фронтенд', 'Веб', 'Интерактив'],
+    tier: 'base',
   },
   {
     id: 'html-css',
@@ -51,6 +68,7 @@ export const courses: Course[] = [
     price: 990,
     desc: 'Создай свою первую красивую страницу с нуля. Flexbox, Grid и адаптив.',
     tags: ['Вёрстка', 'Дизайн', 'Веб'],
+    tier: 'base',
   },
   {
     id: 'sql',
@@ -64,6 +82,21 @@ export const courses: Course[] = [
     price: 1290,
     desc: 'Научись хранить и доставать данные. SELECT, JOIN и реальные запросы.',
     tags: ['Данные', 'Бэкенд', 'Аналитика'],
+    tier: 'base',
+  },
+  {
+    id: 'react-pro',
+    title: 'React Pro: своё приложение',
+    lang: 'React',
+    icon: '⚛️',
+    color: '199 89% 60%',
+    level: 'Опытный',
+    lessons: 4,
+    hours: 16,
+    price: 2990,
+    desc: 'Самостоятельная практика без подсказок: спроектируй и собери своё приложение на React.',
+    tags: ['React', 'Практика', 'Портфолио'],
+    tier: 'pro',
   },
 ];
 

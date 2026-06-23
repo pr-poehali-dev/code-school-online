@@ -54,6 +54,7 @@ def serialize_course(c):
         'color': c['color'], 'level': c['level'], 'lessons': c['lessons'],
         'hours': c['hours'], 'price': c['price'], 'desc': c['description'],
         'tags': c['tags'].split(',') if c['tags'] else [], 'category': c['category'],
+        'tier': c.get('tier', 'base'),
     }
 
 
@@ -177,11 +178,25 @@ def build_state(cur, user_id):
         item['progress'] = min(100, round(done * 100 / total))
         my_courses.append(item)
 
-    available = [serialize_course(c) for c in all_courses if c['id'] not in owned_ids]
+    # Опытные курсы (tier='pro') открываются после полного прохождения React
+    react_course = catalog.get('react')
+    react_total = (react_course['lessons'] or 1) if react_course else 1
+    react_done = prog.get('react', 0)
+    pro_unlocked = react_done >= react_total and react_done > 0
+
+    available = []
+    for c in all_courses:
+        if c['id'] in owned_ids:
+            continue
+        item = serialize_course(c)
+        # блокируем опытные курсы, пока не пройден React
+        item['locked'] = c.get('tier') == 'pro' and not pro_unlocked
+        available.append(item)
 
     recommended = [
         serialize_course(c) for c in all_courses
         if c['id'] not in owned_ids and c['category'] in owned_categories
+        and c.get('tier') != 'pro'
     ][:3]
 
     total_done = sum(prog.get(cid, 0) for cid in owned_ids)
@@ -214,6 +229,7 @@ def build_state(cur, user_id):
         'recommended': recommended,
         'stats': stats,
         'referral': referral,
+        'pro_unlocked': pro_unlocked,
     }
 
 
@@ -261,7 +277,7 @@ def handler(event: dict, context) -> dict:
 
         if action == 'buy':
             course_id = body.get('course_id', '')
-            cur.execute("SELECT price FROM courses WHERE id=%s", (course_id,))
+            cur.execute("SELECT price, tier FROM courses WHERE id=%s", (course_id,))
             crow = cur.fetchone()
             if not crow:
                 return {'statusCode': 404, 'headers': cors_headers(),
@@ -271,6 +287,20 @@ def handler(event: dict, context) -> dict:
             if cur.fetchone():
                 return {'statusCode': 400, 'headers': cors_headers(),
                         'body': json.dumps({'error': 'Курс уже куплен'})}
+            # опытные курсы доступны только после полного прохождения React
+            if crow['tier'] == 'pro':
+                cur.execute("SELECT lessons FROM courses WHERE id='react'")
+                rt = cur.fetchone()
+                react_total = (rt['lessons'] or 1) if rt else 1
+                cur.execute(
+                    "SELECT completed_lessons FROM progress WHERE user_id=%s AND course_id='react'",
+                    (user_id,)
+                )
+                rp = cur.fetchone()
+                react_done = rp['completed_lessons'] if rp else 0
+                if not (react_done >= react_total and react_done > 0):
+                    return {'statusCode': 403, 'headers': cors_headers(),
+                            'body': json.dumps({'error': 'Сначала полностью пройди курс React'})}
             price = crow['price']
             cur.execute("SELECT balance FROM users WHERE id=%s", (user_id,))
             balance = cur.fetchone()['balance']

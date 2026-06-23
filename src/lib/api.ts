@@ -20,6 +20,8 @@ export interface ApiCourse {
   desc: string;
   tags: string[];
   category: string;
+  tier: string;
+  locked?: boolean;
   progress?: number;
   completed_lessons?: number;
 }
@@ -38,6 +40,7 @@ export interface DashboardState {
   recommended: ApiCourse[];
   stats: { courses: number; lessons_done: number; completed_courses: number };
   referral: Referral;
+  pro_unlocked: boolean;
 }
 
 export interface QuizQuestion {
