@@ -1,0 +1,12 @@
+UPDATE lessons SET code_lang='python', code_sample=E'print("Привет, мир!")', code_output=E'Привет, мир!' WHERE course_id='python' AND position=1;
+UPDATE lessons SET code_lang='python', code_sample=E'name = "Алекс"\nage = 25\nprint(name)\nprint(age)', code_output=E'Алекс\n25' WHERE course_id='python' AND position=2;
+UPDATE lessons SET code_lang='python', code_sample=E'age = 20\nif age >= 18:\n    print("Доступ разрешён")\nelse:\n    print("Доступ запрещён")', code_output=E'Доступ разрешён' WHERE course_id='python' AND position=3;
+UPDATE lessons SET code_lang='python', code_sample=E'for i in range(5):\n    print(i)', code_output=E'0\n1\n2\n3\n4' WHERE course_id='python' AND position=4;
+UPDATE lessons SET code_lang='python', code_sample=E'fruits = ["яблоко", "банан", "вишня"]\nfruits.append("груша")\nprint(fruits)\nprint(len(fruits))', code_output=E'[''яблоко'', ''банан'', ''вишня'', ''груша'']\n4' WHERE course_id='python' AND position=5;
+UPDATE lessons SET code_lang='python', code_sample=E'def add(a, b):\n    return a + b\n\nresult = add(2, 3)\nprint(result)', code_output=E'5' WHERE course_id='python' AND position=6;
+UPDATE lessons SET code_lang='python', code_sample=E'user = {"name": "Алекс", "age": 25}\nprint(user["name"])\nuser["age"] = 26\nprint(user["age"])', code_output=E'Алекс\n26' WHERE course_id='python' AND position=7;
+UPDATE lessons SET code_lang='python', code_sample=E'age = 25\nprint("Через год тебе будет", age + 1)', code_output=E'Через год тебе будет 26' WHERE course_id='python' AND position=8;
+UPDATE lessons SET code_lang='python', code_sample=E'text = "Привет, мир"\nprint(len(text))\nprint(text.upper())\nprint(text[0])', code_output=E'11\nПРИВЕТ, МИР\nП' WHERE course_id='python' AND position=9;
+UPDATE lessons SET code_lang='python', code_sample=E'try:\n    number = int("123")\n    print("Спасибо!", number)\nexcept:\n    print("Это не число!")', code_output=E'Спасибо! 123' WHERE course_id='python' AND position=10;
+UPDATE lessons SET code_lang='python', code_sample=E'import random\nprint(random.randint(1, 6))\nimport math\nprint(math.sqrt(16))', code_output=E'4\n4.0' WHERE course_id='python' AND position=11;
+UPDATE lessons SET code_lang='python', code_sample=E'import random\nsecret = random.randint(1, 10)\nguess = 7\nif guess == secret:\n    print("Победа!")\nelif guess < secret:\n    print("Больше")\nelse:\n    print("Меньше")', code_output=E'Больше' WHERE course_id='python' AND position=12;

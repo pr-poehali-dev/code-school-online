@@ -60,6 +60,9 @@ export interface Lesson {
   intro: string;
   steps: LessonStep[];
   software: Software[];
+  code_lang: string;
+  code_sample: string;
+  code_output: string;
   quiz: QuizQuestion[];
   done: boolean;
   locked: boolean;

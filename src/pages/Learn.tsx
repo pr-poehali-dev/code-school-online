@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { dashboardApi, CourseLessons, Lesson, ExamResult } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import ExamPanel from '@/components/learn/ExamPanel';
+import CodePlayground from '@/components/learn/CodePlayground';
 
 const SoftwareDialog = ({ lesson }: { lesson: Lesson }) => (
   <Dialog>
@@ -66,6 +67,7 @@ const Learn = () => {
   const [activeIdx, setActiveIdx] = useState(0);
   const [busy, setBusy] = useState(false);
   const [examMode, setExamMode] = useState(false);
+  const [showCode, setShowCode] = useState(false);
 
   // состояние теста
   const [answers, setAnswers] = useState<Record<number, number>>({});
@@ -122,6 +124,7 @@ const Learn = () => {
     }
     setActiveIdx(idx);
     setAnswers({});
+    setShowCode(false);
   };
 
   const answer = (qi: number, oi: number) => {
@@ -233,6 +236,38 @@ const Learn = () => {
                   </li>
                 ))}
               </ol>
+            </div>
+          )}
+
+          {/* Предпросмотр кода */}
+          {lesson.code_sample && (
+            <div className="glass rounded-2xl p-6">
+              <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <Icon name="Code2" size={20} className="text-primary" />
+                  <h3 className="font-bold text-lg">Песочница кода</h3>
+                </div>
+                <Button
+                  size="sm"
+                  variant={showCode ? 'outline' : 'default'}
+                  onClick={() => setShowCode(!showCode)}
+                  className={showCode ? 'border-border' : 'font-semibold'}
+                >
+                  <Icon name={showCode ? 'EyeOff' : 'Eye'} size={15} className="mr-1.5" />
+                  {showCode ? 'Скрыть' : 'Предпросмотр кода'}
+                </Button>
+              </div>
+              {showCode ? (
+                <CodePlayground
+                  lang={lesson.code_lang}
+                  sample={lesson.code_sample}
+                  output={lesson.code_output}
+                />
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Нажми «Предпросмотр кода», чтобы увидеть живой пример из урока, отредактировать его и запустить.
+                </p>
+              )}
             </div>
           )}
 
