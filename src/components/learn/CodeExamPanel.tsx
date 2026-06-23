@@ -94,6 +94,18 @@ function checkPrint(raw: string): CheckResult {
     hints.push('Внутри скобок пусто. Напиши текст в кавычках, который нужно вывести.');
   }
 
+  // 4. Проверяем, что после закрывающей скобки нет ничего лишнего
+  if (openCount > 0 && closeCount > 0) {
+    const afterParen = code.slice(code.lastIndexOf(')') + 1).trim();
+    if (afterParen.length > 0) {
+      if (afterParen === ',' || afterParen.startsWith(',')) {
+        hints.push('После закрывающей скобки стоит лишняя запятая. Команда print должна заканчиваться на «)», без запятой в конце — иначе Python создаст кортеж, а не просто выведет текст.');
+      } else {
+        hints.push(`После закрывающей скобки «)» есть лишние символы: «${afterParen}». Команда должна заканчиваться ровно на «)».`);
+      }
+    }
+  }
+
   // Если ошибок нет — всё верно
   if (hints.length === 0 && funcName === 'print') {
     // извлекаем сам текст без кавычек для «вывода»
