@@ -51,12 +51,7 @@ const Cabinet = () => {
     finally { setBusy(''); }
   };
 
-  const completeLesson = async (c: ApiCourse) => {
-    setBusy(c.id);
-    try { apply(await dashboardApi.completeLesson(c.id)); toast.success('Урок пройден! +10 XP'); }
-    catch (e) { toast.error((e as Error).message); }
-    finally { setBusy(''); }
-  };
+  const goLearn = (c: ApiCourse) => navigate(`/learn/${c.id}`);
 
   const saveProfile = async () => {
     setBusy('profile');
@@ -151,12 +146,12 @@ const Cabinet = () => {
                       </div>
                     </div>
                     {c.progress === 100 ? (
-                      <span className="flex items-center gap-1 text-xs font-mono text-primary shrink-0">
-                        <Icon name="CheckCircle2" size={15} /> готово
-                      </span>
+                      <Button size="sm" variant="outline" onClick={() => goLearn(c)} className="shrink-0 border-primary/40 text-primary">
+                        <Icon name="RotateCcw" size={14} className="mr-1" /> Повторить
+                      </Button>
                     ) : (
-                      <Button size="sm" disabled={busy === c.id} onClick={() => completeLesson(c)} className="shrink-0">
-                        <Icon name="Play" size={14} className="mr-1" /> Пройти урок
+                      <Button size="sm" onClick={() => goLearn(c)} className="shrink-0">
+                        <Icon name="Play" size={14} className="mr-1" /> Продолжить
                       </Button>
                     )}
                   </div>

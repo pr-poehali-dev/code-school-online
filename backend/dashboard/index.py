@@ -39,6 +39,59 @@ def serialize_course(c):
     }
 
 
+def build_lessons(cur, user_id, course_id):
+    cur.execute("SELECT id, title, lang, icon, color, lessons FROM courses WHERE id=%s", (course_id,))
+    course = cur.fetchone()
+    if not course:
+        return None
+
+    cur.execute("SELECT 1 FROM purchases WHERE user_id=%s AND course_id=%s", (user_id, course_id))
+    owned = cur.fetchone() is not None
+
+    cur.execute("SELECT completed_lessons FROM progress WHERE user_id=%s AND course_id=%s",
+                (user_id, course_id))
+    prow = cur.fetchone()
+    done_count = prow['completed_lessons'] if prow else 0
+
+    cur.execute(
+        "SELECT id, position, title, duration, video_url, content FROM lessons "
+        "WHERE course_id=%s ORDER BY position", (course_id,)
+    )
+    lesson_rows = cur.fetchall()
+
+    lessons = []
+    for idx, l in enumerate(lesson_rows):
+        cur.execute(
+            "SELECT question, options, correct FROM quiz_questions "
+            "WHERE lesson_id=%s ORDER BY position", (l['id'],)
+        )
+        quiz = [
+            {'q': q['question'], 'options': q['options'].split('|||'), 'correct': q['correct']}
+            for q in cur.fetchall()
+        ]
+        lessons.append({
+            'id': l['id'],
+            'position': l['position'],
+            'title': l['title'],
+            'duration': l['duration'],
+            'video_url': l['video_url'],
+            'content': l['content'],
+            'quiz': quiz,
+            'done': idx < done_count,
+            'locked': not owned or idx > done_count,
+        })
+
+    return {
+        'course': {
+            'id': course['id'], 'title': course['title'], 'lang': course['lang'],
+            'icon': course['icon'], 'color': course['color'],
+        },
+        'owned': owned,
+        'done_count': done_count,
+        'lessons': lessons,
+    }
+
+
 def build_state(cur, user_id):
     cur.execute("SELECT id, email, name, avatar, balance FROM users WHERE id=%s", (user_id,))
     user = cur.fetchone()
@@ -109,6 +162,14 @@ def handler(event: dict, context) -> dict:
                     'body': json.dumps({'error': 'Требуется вход'})}
 
         if method == 'GET':
+            params = event.get('queryStringParameters') or {}
+            course_id = params.get('course_id')
+            if course_id:
+                data = build_lessons(cur, user_id, course_id)
+                if not data:
+                    return {'statusCode': 404, 'headers': cors_headers(),
+                            'body': json.dumps({'error': 'Курс не найден'})}
+                return {'statusCode': 200, 'headers': cors_headers(), 'body': json.dumps(data)}
             return {'statusCode': 200, 'headers': cors_headers(),
                     'body': json.dumps(build_state(cur, user_id))}
 
@@ -169,18 +230,34 @@ def handler(event: dict, context) -> dict:
                     'body': json.dumps(build_state(cur, user_id))}
 
         if action == 'complete_lesson':
+            lesson_id = body.get('lesson_id')
             course_id = body.get('course_id', '')
+            cur.execute("SELECT course_id, position FROM lessons WHERE id=%s", (lesson_id,))
+            lrow = cur.fetchone()
+            if not lrow:
+                return {'statusCode': 404, 'headers': cors_headers(),
+                        'body': json.dumps({'error': 'Урок не найден'})}
+            course_id = lrow['course_id']
+            cur.execute("SELECT 1 FROM purchases WHERE user_id=%s AND course_id=%s",
+                        (user_id, course_id))
+            if not cur.fetchone():
+                return {'statusCode': 403, 'headers': cors_headers(),
+                        'body': json.dumps({'error': 'Курс не куплен'})}
             cur.execute("SELECT lessons FROM courses WHERE id=%s", (course_id,))
-            crow = cur.fetchone()
-            if crow:
-                cur.execute(
-                    "UPDATE progress SET completed_lessons = LEAST(%s, completed_lessons + 1), "
-                    "updated_at = NOW() WHERE user_id=%s AND course_id=%s",
-                    (crow['lessons'], user_id, course_id)
-                )
-                conn.commit()
-            return {'statusCode': 200, 'headers': cors_headers(),
-                    'body': json.dumps(build_state(cur, user_id))}
+            total = cur.fetchone()['lessons']
+            cur.execute(
+                "INSERT INTO progress (user_id, course_id, completed_lessons) VALUES (%s, %s, 0) "
+                "ON CONFLICT (user_id, course_id) DO NOTHING", (user_id, course_id)
+            )
+            # позиция урока 1-based; засчитываем, только если это очередной урок
+            cur.execute(
+                "UPDATE progress SET completed_lessons = LEAST(%s, GREATEST(completed_lessons, %s)), "
+                "updated_at = NOW() WHERE user_id=%s AND course_id=%s",
+                (total, lrow['position'], user_id, course_id)
+            )
+            conn.commit()
+            data = build_lessons(cur, user_id, course_id)
+            return {'statusCode': 200, 'headers': cors_headers(), 'body': json.dumps(data)}
 
         return {'statusCode': 400, 'headers': cors_headers(),
                 'body': json.dumps({'error': 'Неизвестное действие'})}

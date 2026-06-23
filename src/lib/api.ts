@@ -32,6 +32,31 @@ export interface DashboardState {
   stats: { courses: number; lessons_done: number; completed_courses: number };
 }
 
+export interface QuizQuestion {
+  q: string;
+  options: string[];
+  correct: number;
+}
+
+export interface Lesson {
+  id: number;
+  position: number;
+  title: string;
+  duration: string;
+  video_url: string;
+  content: string;
+  quiz: QuizQuestion[];
+  done: boolean;
+  locked: boolean;
+}
+
+export interface CourseLessons {
+  course: { id: string; title: string; lang: string; icon: string; color: string };
+  owned: boolean;
+  done_count: number;
+  lessons: Lesson[];
+}
+
 async function post(url: string, body: object, auth = false) {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (auth) headers['X-Auth-Token'] = getToken();
@@ -70,6 +95,14 @@ export const dashboardApi = {
   buy: (course_id: string) => post(DASHBOARD_URL, { action: 'buy', course_id }, true) as Promise<DashboardState>,
   updateProfile: (name: string, avatar?: string) =>
     post(DASHBOARD_URL, { action: 'update_profile', name, avatar: avatar || '' }, true) as Promise<DashboardState>,
-  completeLesson: (course_id: string) =>
-    post(DASHBOARD_URL, { action: 'complete_lesson', course_id }, true) as Promise<DashboardState>,
+  getCourseLessons: async (course_id: string): Promise<CourseLessons> => {
+    const res = await fetch(`${DASHBOARD_URL}?course_id=${encodeURIComponent(course_id)}`, {
+      headers: { 'X-Auth-Token': getToken() },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Ошибка загрузки');
+    return data;
+  },
+  completeLesson: (lesson_id: number) =>
+    post(DASHBOARD_URL, { action: 'complete_lesson', lesson_id }, true) as Promise<CourseLessons>,
 };
