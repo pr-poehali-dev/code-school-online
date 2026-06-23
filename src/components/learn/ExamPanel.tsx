@@ -44,8 +44,12 @@ const ExamPanel = ({ courseId, courseTitle, questions, unlocked, result, onResul
       const res = await dashboardApi.submitExam(courseId, arr);
       setLastResult(res);
       onResult(res);
-      if (res.passed) toast.success(`Экзамен сдан! ${res.percent}% 🎉`);
-      else toast.error(`Недостаточно: ${res.percent}%. Попробуй ещё раз`);
+      if (res.passed) {
+        const xp = res.xp_gained ? ` +${res.xp_gained} XP ⚡` : '';
+        toast.success(`Экзамен сдан! ${res.percent}%${xp} 🎉`);
+      } else {
+        toast.error(`Недостаточно: ${res.percent}%. Попробуй ещё раз`);
+      }
     } catch (e) {
       toast.error((e as Error).message);
     } finally {

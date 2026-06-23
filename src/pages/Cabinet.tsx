@@ -21,6 +21,7 @@ const Cabinet = () => {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState('');
   const [nameInput, setNameInput] = useState('');
+  const [xpAmount, setXpAmount] = useState(500);
 
   useEffect(() => {
     if (!authLoading && !isAuthed) navigate('/login');
@@ -53,6 +54,15 @@ const Cabinet = () => {
 
   const goLearn = (c: ApiCourse) => navigate(`/learn/${c.id}`);
 
+  const exchangeXp = async () => {
+    setBusy('xp');
+    try {
+      apply(await dashboardApi.exchangeXp(xpAmount));
+      toast.success(`Обменяно ${xpAmount} XP на ${(xpAmount / 10) * 5} ₽`);
+    } catch (e) { toast.error((e as Error).message); }
+    finally { setBusy(''); }
+  };
+
   const saveProfile = async () => {
     setBusy('profile');
     try { apply(await dashboardApi.updateProfile(nameInput)); toast.success('Профиль обновлён'); }
@@ -81,6 +91,12 @@ const Cabinet = () => {
           </Link>
           <div className="flex items-center gap-3">
             <div className="hidden sm:flex items-center gap-2 glass rounded-lg px-3 py-1.5">
+              <Icon name="Zap" size={16} className="text-accent" />
+              <span className={`font-mono font-bold ${user.xp < 0 ? 'text-destructive' : ''}`}>
+                {user.xp.toLocaleString('ru')} XP
+              </span>
+            </div>
+            <div className="hidden sm:flex items-center gap-2 glass rounded-lg px-3 py-1.5">
               <Icon name="Wallet" size={16} className="text-primary" />
               <span className="font-mono font-bold">{user.balance.toLocaleString('ru')} ₽</span>
             </div>
@@ -102,14 +118,15 @@ const Cabinet = () => {
             <h1 className="text-2xl font-extrabold">{user.name}</h1>
             <p className="text-sm text-muted-foreground font-mono">{user.email}</p>
           </div>
-          <div className="relative grid grid-cols-3 gap-3 w-full sm:w-auto">
+          <div className="relative grid grid-cols-2 sm:grid-cols-4 gap-3 w-full sm:w-auto">
             {[
+              { v: user.xp.toLocaleString('ru'), l: 'XP', accent: true },
               { v: stats.courses, l: 'курса' },
               { v: stats.lessons_done, l: 'уроков' },
               { v: stats.completed_courses, l: 'завершено' },
             ].map((s) => (
               <div key={s.l} className="text-center bg-background/40 rounded-xl px-4 py-3">
-                <div className="font-mono font-bold text-xl text-primary">{s.v}</div>
+                <div className={`font-mono font-bold text-xl ${s.accent ? (user.xp < 0 ? 'text-destructive' : 'text-accent') : 'text-primary'}`}>{s.v}</div>
                 <div className="text-xs text-muted-foreground">{s.l}</div>
               </div>
             ))}
@@ -192,7 +209,7 @@ const Cabinet = () => {
           </TabsContent>
 
           {/* БАЛАНС */}
-          <TabsContent value="balance">
+          <TabsContent value="balance" className="space-y-5">
             <div className="glass rounded-2xl p-8 max-w-lg mx-auto text-center">
               <div className="text-sm text-muted-foreground mb-1">Текущий баланс</div>
               <div className="text-5xl font-extrabold font-mono text-primary mb-8">
@@ -209,6 +226,60 @@ const Cabinet = () => {
               </div>
               <p className="text-xs text-muted-foreground">
                 Демо-режим: баланс пополняется мгновенно без реальной оплаты.
+              </p>
+            </div>
+
+            {/* Обмен XP на баланс */}
+            <div className="glass rounded-2xl p-8 max-w-lg mx-auto">
+              <div className="flex items-center gap-2 mb-4">
+                <Icon name="Zap" size={20} className="text-accent" />
+                <h3 className="font-bold text-lg">Обмен XP на баланс</h3>
+              </div>
+              <div className="flex items-center justify-between rounded-xl bg-background/50 border border-border p-4 mb-5">
+                <div>
+                  <div className="text-xs text-muted-foreground">Доступно XP</div>
+                  <div className={`font-mono font-bold text-2xl ${user.xp < 0 ? 'text-destructive' : 'text-accent'}`}>
+                    {user.xp.toLocaleString('ru')}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-xs text-muted-foreground">Курс обмена</div>
+                  <div className="font-mono font-semibold">10 XP = 5 ₽</div>
+                </div>
+              </div>
+
+              <label className="text-sm font-medium mb-2 block">Сколько XP обменять</label>
+              <div className="flex items-center gap-3 mb-2">
+                <Input
+                  type="number" min={500} step={10} value={xpAmount}
+                  onChange={(e) => setXpAmount(Math.max(0, parseInt(e.target.value) || 0))}
+                  className="h-12 bg-background/60 border-border font-mono"
+                />
+                <div className="shrink-0 text-right">
+                  <div className="text-xs text-muted-foreground">Получишь</div>
+                  <div className="font-mono font-bold text-primary">{Math.floor(xpAmount / 10) * 5} ₽</div>
+                </div>
+              </div>
+
+              <div className="flex gap-2 mb-5">
+                {[500, 1000, 2000].map((a) => (
+                  <Button key={a} size="sm" variant="outline" onClick={() => setXpAmount(a)}
+                    className="border-border font-mono flex-1">
+                    {a}
+                  </Button>
+                ))}
+              </div>
+
+              <Button
+                onClick={exchangeXp}
+                disabled={busy === 'xp' || xpAmount < 500 || user.xp < xpAmount || xpAmount % 10 !== 0}
+                className="w-full h-12 font-semibold glow-green"
+              >
+                <Icon name="ArrowLeftRight" size={16} className="mr-1.5" />
+                Обменять {xpAmount} XP на {Math.floor(xpAmount / 10) * 5} ₽
+              </Button>
+              <p className="text-xs text-muted-foreground mt-3">
+                Минимальная сумма обмена — 500 XP. Зарабатывай XP, проходя уроки и тесты.
               </p>
             </div>
           </TabsContent>

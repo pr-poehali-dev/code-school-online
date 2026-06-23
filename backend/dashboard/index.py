@@ -30,6 +30,24 @@ def get_user_id(cur, token: str):
     return row['user_id'] if row else None
 
 
+def award_once(cur, user_id, reward_key, amount):
+    '''Начисляет XP один раз за reward_key. Возвращает True если начислено впервые.'''
+    cur.execute(
+        "INSERT INTO xp_rewards (user_id, reward_key, amount) VALUES (%s, %s, %s) "
+        "ON CONFLICT (user_id, reward_key) DO NOTHING RETURNING id",
+        (user_id, reward_key, amount)
+    )
+    if cur.fetchone():
+        cur.execute("UPDATE users SET xp = xp + %s WHERE id=%s", (amount, user_id))
+        return True
+    return False
+
+
+def change_xp(cur, user_id, amount):
+    '''Меняет XP без ограничения снизу (может уйти в минус).'''
+    cur.execute("UPDATE users SET xp = xp + %s WHERE id=%s", (amount, user_id))
+
+
 def serialize_course(c):
     return {
         'id': c['id'], 'title': c['title'], 'lang': c['lang'], 'icon': c['icon'],
@@ -132,7 +150,7 @@ def build_lessons(cur, user_id, course_id):
 
 
 def build_state(cur, user_id):
-    cur.execute("SELECT id, email, name, avatar, balance FROM users WHERE id=%s", (user_id,))
+    cur.execute("SELECT id, email, name, avatar, balance, xp FROM users WHERE id=%s", (user_id,))
     user = cur.fetchone()
 
     cur.execute("SELECT * FROM courses ORDER BY price")
@@ -175,7 +193,7 @@ def build_state(cur, user_id):
 
     return {
         'user': {'id': user['id'], 'email': user['email'], 'name': user['name'],
-                 'avatar': user['avatar'], 'balance': user['balance']},
+                 'avatar': user['avatar'], 'balance': user['balance'], 'xp': user['xp']},
         'my_courses': my_courses,
         'available_courses': available,
         'recommended': recommended,
@@ -294,9 +312,64 @@ def handler(event: dict, context) -> dict:
                 "updated_at = NOW() WHERE user_id=%s AND course_id=%s",
                 (total, lrow['position'], user_id, course_id)
             )
+            # +10 XP за первое прохождение урока
+            xp_gained = 10 if award_once(cur, user_id, f'lesson:{lesson_id}', 10) else 0
             conn.commit()
             data = build_lessons(cur, user_id, course_id)
+            data['xp_gained'] = xp_gained
             return {'statusCode': 200, 'headers': cors_headers(), 'body': json.dumps(data)}
+
+        if action == 'quiz_answer':
+            # начисление/списание XP за ответ в тесте урока
+            lesson_id = body.get('lesson_id')
+            q_idx = body.get('q_idx')
+            correct = bool(body.get('correct'))
+            cur.execute("SELECT course_id FROM lessons WHERE id=%s", (lesson_id,))
+            lrow = cur.fetchone()
+            if not lrow:
+                return {'statusCode': 404, 'headers': cors_headers(),
+                        'body': json.dumps({'error': 'Урок не найден'})}
+            cur.execute("SELECT 1 FROM purchases WHERE user_id=%s AND course_id=%s",
+                        (user_id, lrow['course_id']))
+            if not cur.fetchone():
+                return {'statusCode': 403, 'headers': cors_headers(),
+                        'body': json.dumps({'error': 'Курс не куплен'})}
+            xp_delta = 0
+            if correct:
+                # +5 XP один раз за верный ответ на конкретный вопрос
+                if award_once(cur, user_id, f'quiz:{lesson_id}:{q_idx}', 5):
+                    xp_delta = 5
+            else:
+                # -5 XP за неверный ответ (может уйти в минус)
+                change_xp(cur, user_id, -5)
+                xp_delta = -5
+            cur.execute("SELECT xp FROM users WHERE id=%s", (user_id,))
+            new_xp = cur.fetchone()['xp']
+            conn.commit()
+            return {'statusCode': 200, 'headers': cors_headers(),
+                    'body': json.dumps({'xp': new_xp, 'xp_delta': xp_delta})}
+
+        if action == 'exchange_xp':
+            amount = int(body.get('amount', 0))
+            if amount < 500:
+                return {'statusCode': 400, 'headers': cors_headers(),
+                        'body': json.dumps({'error': 'Минимум для обмена — 500 XP'})}
+            if amount % 10 != 0:
+                return {'statusCode': 400, 'headers': cors_headers(),
+                        'body': json.dumps({'error': 'Количество XP должно быть кратно 10'})}
+            cur.execute("SELECT xp FROM users WHERE id=%s", (user_id,))
+            cur_xp = cur.fetchone()['xp']
+            if cur_xp < amount:
+                return {'statusCode': 400, 'headers': cors_headers(),
+                        'body': json.dumps({'error': 'Недостаточно XP для обмена'})}
+            rubles = (amount // 10) * 5  # 10 XP = 5 рублей
+            cur.execute(
+                "UPDATE users SET xp = xp - %s, balance = balance + %s WHERE id=%s",
+                (amount, rubles, user_id)
+            )
+            conn.commit()
+            return {'statusCode': 200, 'headers': cors_headers(),
+                    'body': json.dumps(build_state(cur, user_id))}
 
         if action == 'submit_exam':
             course_id = body.get('course_id', '')
@@ -327,9 +400,14 @@ def handler(event: dict, context) -> dict:
                 "passed=EXCLUDED.passed, created_at=NOW()",
                 (user_id, course_id, score, total, percent, passed)
             )
+            # +30 XP за первую успешную сдачу экзамена
+            xp_gained = 0
+            if passed and award_once(cur, user_id, f'exam:{course_id}', 30):
+                xp_gained = 30
             conn.commit()
             return {'statusCode': 200, 'headers': cors_headers(), 'body': json.dumps({
-                'score': score, 'total': total, 'percent': percent, 'passed': passed
+                'score': score, 'total': total, 'percent': percent,
+                'passed': passed, 'xp_gained': xp_gained
             })}
 
         return {'statusCode': 400, 'headers': cors_headers(),

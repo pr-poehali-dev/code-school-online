@@ -61,7 +61,7 @@ const SoftwareDialog = ({ lesson }: { lesson: Lesson }) => (
 const Learn = () => {
   const { courseId = '' } = useParams();
   const navigate = useNavigate();
-  const { isAuthed, loading: authLoading } = useAuth();
+  const { isAuthed, loading: authLoading, user, setUser } = useAuth();
   const [data, setData] = useState<CourseLessons | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeIdx, setActiveIdx] = useState(0);
@@ -127,12 +127,22 @@ const Learn = () => {
     setShowCode(false);
   };
 
-  const answer = (qi: number, oi: number) => {
+  const answer = async (qi: number, oi: number) => {
     const current = answers[qi];
     const correctIdx = lesson.quiz[qi].correct;
     // если уже ответили верно — блокируем; иначе разрешаем менять ответ
     if (current === correctIdx) return;
     setAnswers((prev) => ({ ...prev, [qi]: oi }));
+
+    const isCorrect = oi === correctIdx;
+    try {
+      const res = await dashboardApi.quizAnswer(lesson.id, qi, isCorrect);
+      if (user) setUser({ ...user, xp: res.xp });
+      if (res.xp_delta > 0) toast.success(`+${res.xp_delta} XP за верный ответ ⚡`);
+      else if (res.xp_delta < 0) toast.error(`${res.xp_delta} XP за ошибку`);
+    } catch {
+      // тихо игнорируем сетевые сбои начисления
+    }
   };
 
   const finishLesson = async () => {
@@ -144,7 +154,13 @@ const Learn = () => {
     try {
       const updated = await dashboardApi.completeLesson(lesson.id);
       setData(updated);
-      toast.success('Урок пройден! +10 XP 🎉');
+      const gained = updated.xp_gained || 0;
+      if (gained > 0) {
+        if (user) setUser({ ...user, xp: user.xp + gained });
+        toast.success(`Урок пройден! +${gained} XP 🎉`);
+      } else {
+        toast.success('Урок пройден! ✓');
+      }
       const next = updated.lessons.findIndex((l, i) => i > activeIdx && !l.locked);
       if (next !== -1) { setActiveIdx(next); setAnswers({}); }
       else toast.success('Поздравляем, курс пройден! 🏆');

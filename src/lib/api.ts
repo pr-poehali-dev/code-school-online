@@ -25,7 +25,7 @@ export interface ApiCourse {
 }
 
 export interface DashboardState {
-  user: { id: number; email: string; name: string; avatar: string; balance: number };
+  user: { id: number; email: string; name: string; avatar: string; balance: number; xp: number };
   my_courses: ApiCourse[];
   available_courses: ApiCourse[];
   recommended: ApiCourse[];
@@ -73,6 +73,7 @@ export interface ExamResult {
   total: number;
   percent: number;
   passed: boolean;
+  xp_gained?: number;
 }
 
 export interface CourseLessons {
@@ -83,6 +84,7 @@ export interface CourseLessons {
   exam: QuizQuestion[];
   exam_unlocked: boolean;
   exam_result: ExamResult | null;
+  xp_gained?: number;
 }
 
 async function post(url: string, body: object, auth = false) {
@@ -135,4 +137,8 @@ export const dashboardApi = {
     post(DASHBOARD_URL, { action: 'complete_lesson', lesson_id }, true) as Promise<CourseLessons>,
   submitExam: (course_id: string, answers: number[]) =>
     post(DASHBOARD_URL, { action: 'submit_exam', course_id, answers }, true) as Promise<ExamResult>,
+  quizAnswer: (lesson_id: number, q_idx: number, correct: boolean) =>
+    post(DASHBOARD_URL, { action: 'quiz_answer', lesson_id, q_idx, correct }, true) as Promise<{ xp: number; xp_delta: number }>,
+  exchangeXp: (amount: number) =>
+    post(DASHBOARD_URL, { action: 'exchange_xp', amount }, true) as Promise<DashboardState>,
 };
