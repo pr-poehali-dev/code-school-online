@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { dashboardApi, CourseLessons, Lesson, ExamResult } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import ExamPanel from '@/components/learn/ExamPanel';
+import CodeExamPanel from '@/components/learn/CodeExamPanel';
 import CodePlayground from '@/components/learn/CodePlayground';
 
 const SoftwareDialog = ({ lesson }: { lesson: Lesson }) => (
@@ -192,14 +193,24 @@ const Learn = () => {
       <main className="container py-8 grid lg:grid-cols-3 gap-5">
         {examMode ? (
         <div className="lg:col-span-2 space-y-5">
-          <ExamPanel
-            courseId={data.course.id}
-            courseTitle={data.course.title}
-            questions={data.exam}
-            unlocked={data.exam_unlocked}
-            result={data.exam_result}
-            onResult={(r: ExamResult) => setData({ ...data, exam_result: r })}
-          />
+          {data.course.id === 'starter-intro' ? (
+            <CodeExamPanel
+              courseId={data.course.id}
+              courseTitle={data.course.title}
+              unlocked={data.exam_unlocked}
+              result={data.exam_result}
+              onResult={(r: ExamResult) => setData({ ...data, exam_result: r })}
+            />
+          ) : (
+            <ExamPanel
+              courseId={data.course.id}
+              courseTitle={data.course.title}
+              questions={data.exam}
+              unlocked={data.exam_unlocked}
+              result={data.exam_result}
+              onResult={(r: ExamResult) => setData({ ...data, exam_result: r })}
+            />
+          )}
         </div>
         ) : (
         <div className="lg:col-span-2 space-y-5">
