@@ -146,8 +146,8 @@ export const dashboardApi = {
   },
   completeLesson: (lesson_id: number) =>
     post(DASHBOARD_URL, { action: 'complete_lesson', lesson_id }, true) as Promise<CourseLessons>,
-  submitExam: (course_id: string, answers: number[]) =>
-    post(DASHBOARD_URL, { action: 'submit_exam', course_id, answers }, true) as Promise<ExamResult>,
+  submitExam: (course_id: string, answers: number[], hint_penalty = 0) =>
+    post(DASHBOARD_URL, { action: 'submit_exam', course_id, answers, hint_penalty }, true) as Promise<ExamResult>,
   quizAnswer: (lesson_id: number, q_idx: number, correct: boolean) =>
     post(DASHBOARD_URL, { action: 'quiz_answer', lesson_id, q_idx, correct }, true) as Promise<{ xp: number; xp_delta: number }>,
   exchangeXp: (amount: number) =>

@@ -110,6 +110,13 @@ const CodeExamPanel = ({ courseId, courseTitle, unlocked, result, onResult }: Pr
   const [check, setCheck] = useState<CheckResult | null>(null);
   const [busy, setBusy] = useState(false);
   const [lastResult, setLastResult] = useState<ExamResult | null>(result);
+  const [attempts, setAttempts] = useState(0);
+  const [failedAttempts, setFailedAttempts] = useState(0);
+
+  const PENALTY_PER_FAIL = 5;
+  const MAX_REWARD = 30;
+  const MIN_REWARD = 5;
+  const projectedReward = Math.max(MIN_REWARD, MAX_REWARD - failedAttempts * PENALTY_PER_FAIL);
 
   if (!unlocked) {
     return (
@@ -133,13 +140,17 @@ const CodeExamPanel = ({ courseId, courseTitle, unlocked, result, onResult }: Pr
   const submit = async () => {
     const res = checkPrint(code);
     setCheck(res);
+    setAttempts((a) => a + 1);
     if (!res.ok) {
+      // неудачная попытка с подсказками — снижает будущую награду
+      setFailedAttempts((f) => f + 1);
       toast.error('В коде есть ошибки — исправь их по подсказкам ниже');
       return;
     }
     setBusy(true);
     try {
-      const examRes = await dashboardApi.submitExam(courseId, [1]);
+      const penalty = failedAttempts * PENALTY_PER_FAIL;
+      const examRes = await dashboardApi.submitExam(courseId, [1], penalty);
       setLastResult(examRes);
       onResult(examRes);
       const xp = examRes.xp_gained ? ` +${examRes.xp_gained} XP ⚡` : '';
@@ -156,6 +167,8 @@ const CodeExamPanel = ({ courseId, courseTitle, unlocked, result, onResult }: Pr
     setCode('');
     setCheck(null);
     setLastResult(null);
+    setAttempts(0);
+    setFailedAttempts(0);
   };
 
   // Экран результата
@@ -187,7 +200,8 @@ const CodeExamPanel = ({ courseId, courseTitle, unlocked, result, onResult }: Pr
         <p className="text-muted-foreground text-sm max-w-md mx-auto mb-6">
           Итоговое задание по курсу «{courseTitle}». Тебе нужно самому написать рабочую
           команду вывода текста на экран — как настоящий программист. Если ошибёшься,
-          подскажу, что именно не так.
+          подскажу, что именно не так, но каждая попытка с подсказкой снижает награду
+          на {PENALTY_PER_FAIL} XP (с {MAX_REWARD} до минимум {MIN_REWARD}). Решишь сам — получишь максимум.
         </p>
         <Button onClick={() => setStarted(true)} className="font-semibold glow-green h-12 px-7">
           Начать задание
@@ -203,6 +217,15 @@ const CodeExamPanel = ({ courseId, courseTitle, unlocked, result, onResult }: Pr
       <div className="flex items-center gap-2 mb-4">
         <Icon name="Terminal" size={20} className="text-primary" />
         <h3 className="font-bold text-lg">Практическое задание</h3>
+        <span className="ml-auto flex items-center gap-2 font-mono text-xs">
+          <span className="text-muted-foreground" title="Сделано попыток сдать">
+            Попытки: {attempts}
+          </span>
+          <span className={`px-2 py-0.5 rounded-full ${projectedReward === MAX_REWARD ? 'bg-primary/15 text-primary' : 'bg-yellow-500/15 text-yellow-500'}`}
+            title="Награда снижается за неверные попытки с подсказками">
+            <Icon name="Zap" size={11} className="inline mr-0.5" />{projectedReward} XP
+          </span>
+        </span>
       </div>
 
       <div className="rounded-xl bg-accent/10 border border-accent/30 p-4 mb-5">
@@ -266,6 +289,18 @@ const CodeExamPanel = ({ courseId, courseTitle, unlocked, result, onResult }: Pr
               </li>
             ))}
           </ul>
+          {failedAttempts > 0 && projectedReward > MIN_REWARD && (
+            <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border flex items-center gap-1.5">
+              <Icon name="TrendingDown" size={13} className="text-yellow-500" />
+              За использование подсказок награда снижена до {projectedReward} XP. Реши сам — получишь больше.
+            </p>
+          )}
+          {failedAttempts > 0 && projectedReward === MIN_REWARD && (
+            <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border flex items-center gap-1.5">
+              <Icon name="TrendingDown" size={13} className="text-yellow-500" />
+              Награда за это задание сейчас минимальная — {MIN_REWARD} XP.
+            </p>
+          )}
         </div>
       )}
     </div>

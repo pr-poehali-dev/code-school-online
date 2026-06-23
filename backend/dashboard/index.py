@@ -456,10 +456,14 @@ def handler(event: dict, context) -> dict:
                 "passed=EXCLUDED.passed, created_at=NOW()",
                 (user_id, course_id, score, total, percent, passed)
             )
-            # +30 XP за первую успешную сдачу экзамена
+            # +30 XP за первую успешную сдачу экзамена.
+            # За подсказки в практическом экзамене награда снижается (минимум 5 XP).
+            base_reward = 30
+            penalty = int(body.get('hint_penalty', 0) or 0)
+            reward = max(5, base_reward - penalty)
             xp_gained = 0
-            if passed and award_once(cur, user_id, f'exam:{course_id}', 30):
-                xp_gained = 30
+            if passed and award_once(cur, user_id, f'exam:{course_id}', reward):
+                xp_gained = reward
             conn.commit()
             return {'statusCode': 200, 'headers': cors_headers(), 'body': json.dumps({
                 'score': score, 'total': total, 'percent': percent,
