@@ -128,7 +128,10 @@ const Learn = () => {
   };
 
   const answer = (qi: number, oi: number) => {
-    if (answers[qi] !== undefined) return;
+    const current = answers[qi];
+    const correctIdx = lesson.quiz[qi].correct;
+    // если уже ответили верно — блокируем; иначе разрешаем менять ответ
+    if (current === correctIdx) return;
     setAnswers((prev) => ({ ...prev, [qi]: oi }));
   };
 
@@ -291,43 +294,58 @@ const Learn = () => {
                 <Icon name="ListChecks" size={20} className="text-primary" />
                 <h3 className="font-bold text-lg">Практический тест</h3>
                 <span className="ml-auto font-mono text-xs text-muted-foreground">
-                  {Object.keys(answers).length} / {lesson.quiz.length}
+                  {lesson.quiz.filter((q, i) => answers[i] === q.correct).length} / {lesson.quiz.length}
                 </span>
               </div>
 
               <div className="space-y-6">
-                {lesson.quiz.map((q, qi) => (
-                  <div key={qi}>
-                    <p className="font-semibold mb-3">{qi + 1}. {q.q}</p>
-                    <div className="space-y-2">
-                      {q.options.map((opt, oi) => {
-                        const picked = answers[qi];
-                        const answered = picked !== undefined;
-                        const isCorrect = answered && oi === q.correct;
-                        const isWrong = answered && oi === picked && oi !== q.correct;
-                        return (
-                          <button
-                            key={oi}
-                            onClick={() => answer(qi, oi)}
-                            disabled={answered}
-                            className={`w-full text-left px-4 py-3 rounded-xl border font-mono text-sm transition-all flex items-center gap-3
-                              ${isCorrect ? 'border-primary bg-primary/10 text-primary' : ''}
-                              ${isWrong ? 'border-destructive bg-destructive/10 text-destructive' : ''}
-                              ${!answered ? 'border-border bg-background/40 hover:border-primary/60' : ''}
-                              ${answered && !isCorrect && !isWrong ? 'border-border opacity-50' : ''}`}
-                          >
-                            <span className="w-6 h-6 rounded-md bg-secondary flex items-center justify-center text-xs shrink-0">
-                              {String.fromCharCode(65 + oi)}
-                            </span>
-                            {opt}
-                            {isCorrect && <Icon name="Check" size={16} className="ml-auto" />}
-                            {isWrong && <Icon name="X" size={16} className="ml-auto" />}
-                          </button>
-                        );
-                      })}
+                {lesson.quiz.map((q, qi) => {
+                  const picked = answers[qi];
+                  const solved = picked === q.correct;
+                  const mistake = picked !== undefined && !solved;
+                  return (
+                    <div key={qi}>
+                      <p className="font-semibold mb-3">{qi + 1}. {q.q}</p>
+                      <div className="space-y-2">
+                        {q.options.map((opt, oi) => {
+                          const isPicked = picked === oi;
+                          const isCorrect = solved && oi === q.correct;
+                          const isWrong = mistake && isPicked;
+                          return (
+                            <button
+                              key={oi}
+                              onClick={() => answer(qi, oi)}
+                              disabled={solved}
+                              className={`w-full text-left px-4 py-3 rounded-xl border font-mono text-sm transition-all flex items-center gap-3
+                                ${isCorrect ? 'border-primary bg-primary/10 text-primary' : ''}
+                                ${isWrong ? 'border-destructive bg-destructive/10 text-destructive' : ''}
+                                ${!isCorrect && !isWrong ? 'border-border bg-background/40 hover:border-primary/60 cursor-pointer' : ''}`}
+                            >
+                              <span className="w-6 h-6 rounded-md bg-secondary flex items-center justify-center text-xs shrink-0">
+                                {String.fromCharCode(65 + oi)}
+                              </span>
+                              {opt}
+                              {isCorrect && <Icon name="Check" size={16} className="ml-auto" />}
+                              {isWrong && <Icon name="X" size={16} className="ml-auto" />}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {mistake && (
+                        <p className="text-xs text-destructive mt-2 flex items-center gap-1.5">
+                          <Icon name="RefreshCw" size={13} />
+                          Неверно — выбери другой вариант
+                        </p>
+                      )}
+                      {solved && (
+                        <p className="text-xs text-primary mt-2 flex items-center gap-1.5">
+                          <Icon name="CheckCircle2" size={13} />
+                          Верно!
+                        </p>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
