@@ -92,6 +92,27 @@ def build_lessons(cur, user_id, course_id):
             'locked': not owned or idx > done_count,
         })
 
+    cur.execute(
+        "SELECT question, options, correct FROM exam_questions "
+        "WHERE course_id=%s ORDER BY position", (course_id,)
+    )
+    exam = [
+        {'q': q['question'], 'options': q['options'].split('|||'), 'correct': q['correct']}
+        for q in cur.fetchall()
+    ]
+
+    cur.execute(
+        "SELECT score, total, percent, passed FROM exam_results "
+        "WHERE user_id=%s AND course_id=%s", (user_id, course_id)
+    )
+    er = cur.fetchone()
+    exam_result = None
+    if er:
+        exam_result = {'score': er['score'], 'total': er['total'],
+                       'percent': er['percent'], 'passed': er['passed']}
+
+    all_done = done_count >= len(lessons) and len(lessons) > 0
+
     return {
         'course': {
             'id': course['id'], 'title': course['title'], 'lang': course['lang'],
@@ -100,6 +121,9 @@ def build_lessons(cur, user_id, course_id):
         'owned': owned,
         'done_count': done_count,
         'lessons': lessons,
+        'exam': exam,
+        'exam_unlocked': all_done,
+        'exam_result': exam_result,
     }
 
 
@@ -269,6 +293,40 @@ def handler(event: dict, context) -> dict:
             conn.commit()
             data = build_lessons(cur, user_id, course_id)
             return {'statusCode': 200, 'headers': cors_headers(), 'body': json.dumps(data)}
+
+        if action == 'submit_exam':
+            course_id = body.get('course_id', '')
+            answers = body.get('answers', [])
+            cur.execute("SELECT 1 FROM purchases WHERE user_id=%s AND course_id=%s",
+                        (user_id, course_id))
+            if not cur.fetchone():
+                return {'statusCode': 403, 'headers': cors_headers(),
+                        'body': json.dumps({'error': 'Курс не куплен'})}
+            cur.execute(
+                "SELECT correct FROM exam_questions WHERE course_id=%s ORDER BY position",
+                (course_id,)
+            )
+            correct_list = [r['correct'] for r in cur.fetchall()]
+            total = len(correct_list)
+            if total == 0:
+                return {'statusCode': 400, 'headers': cors_headers(),
+                        'body': json.dumps({'error': 'Экзамен не найден'})}
+            score = sum(1 for i, c in enumerate(correct_list)
+                        if i < len(answers) and answers[i] == c)
+            percent = round(score * 100 / total)
+            passed = percent >= 70
+            cur.execute(
+                "INSERT INTO exam_results (user_id, course_id, score, total, percent, passed) "
+                "VALUES (%s, %s, %s, %s, %s, %s) "
+                "ON CONFLICT (user_id, course_id) DO UPDATE SET "
+                "score=EXCLUDED.score, total=EXCLUDED.total, percent=EXCLUDED.percent, "
+                "passed=EXCLUDED.passed, created_at=NOW()",
+                (user_id, course_id, score, total, percent, passed)
+            )
+            conn.commit()
+            return {'statusCode': 200, 'headers': cors_headers(), 'body': json.dumps({
+                'score': score, 'total': total, 'percent': percent, 'passed': passed
+            })}
 
         return {'statusCode': 400, 'headers': cors_headers(),
                 'body': json.dumps({'error': 'Неизвестное действие'})}

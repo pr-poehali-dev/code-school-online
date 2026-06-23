@@ -65,11 +65,21 @@ export interface Lesson {
   locked: boolean;
 }
 
+export interface ExamResult {
+  score: number;
+  total: number;
+  percent: number;
+  passed: boolean;
+}
+
 export interface CourseLessons {
   course: { id: string; title: string; lang: string; icon: string; color: string };
   owned: boolean;
   done_count: number;
   lessons: Lesson[];
+  exam: QuizQuestion[];
+  exam_unlocked: boolean;
+  exam_result: ExamResult | null;
 }
 
 async function post(url: string, body: object, auth = false) {
@@ -120,4 +130,6 @@ export const dashboardApi = {
   },
   completeLesson: (lesson_id: number) =>
     post(DASHBOARD_URL, { action: 'complete_lesson', lesson_id }, true) as Promise<CourseLessons>,
+  submitExam: (course_id: string, answers: number[]) =>
+    post(DASHBOARD_URL, { action: 'submit_exam', course_id, answers }, true) as Promise<ExamResult>,
 };

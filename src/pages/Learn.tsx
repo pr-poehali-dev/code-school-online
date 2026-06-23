@@ -7,8 +7,9 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { dashboardApi, CourseLessons, Lesson } from '@/lib/api';
+import { dashboardApi, CourseLessons, Lesson, ExamResult } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
+import ExamPanel from '@/components/learn/ExamPanel';
 
 const SoftwareDialog = ({ lesson }: { lesson: Lesson }) => (
   <Dialog>
@@ -64,6 +65,7 @@ const Learn = () => {
   const [loading, setLoading] = useState(true);
   const [activeIdx, setActiveIdx] = useState(0);
   const [busy, setBusy] = useState(false);
+  const [examMode, setExamMode] = useState(false);
 
   // состояние теста
   const [answers, setAnswers] = useState<Record<number, number>>({});
@@ -166,6 +168,18 @@ const Learn = () => {
       </header>
 
       <main className="container py-8 grid lg:grid-cols-3 gap-5">
+        {examMode ? (
+        <div className="lg:col-span-2 space-y-5">
+          <ExamPanel
+            courseId={data.course.id}
+            courseTitle={data.course.title}
+            questions={data.exam}
+            unlocked={data.exam_unlocked}
+            result={data.exam_result}
+            onResult={(r: ExamResult) => setData({ ...data, exam_result: r })}
+          />
+        </div>
+        ) : (
         <div className="lg:col-span-2 space-y-5">
           {/* Видео */}
           <div className="glass rounded-2xl overflow-hidden">
@@ -292,6 +306,7 @@ const Learn = () => {
             <Icon name="ArrowRight" size={18} className="ml-1" />
           </Button>
         </div>
+        )}
 
         {/* Список уроков */}
         <div className="glass rounded-2xl p-6 h-fit lg:sticky lg:top-24">
@@ -300,9 +315,9 @@ const Learn = () => {
             {data.lessons.map((l, idx) => (
               <button
                 key={l.id}
-                onClick={() => selectLesson(idx, l)}
+                onClick={() => { setExamMode(false); selectLesson(idx, l); }}
                 className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors text-left
-                  ${idx === activeIdx ? 'bg-primary/10 border border-primary/40' : 'hover:bg-background/50'}
+                  ${!examMode && idx === activeIdx ? 'bg-primary/10 border border-primary/40' : 'hover:bg-background/50'}
                   ${l.locked ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0
@@ -315,6 +330,25 @@ const Learn = () => {
                 </div>
               </button>
             ))}
+
+            {/* Финальный экзамен */}
+            <button
+              onClick={() => setExamMode(true)}
+              className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors text-left mt-2 border-t border-border pt-4
+                ${examMode ? 'bg-accent/10 border border-accent/40' : 'hover:bg-background/50'}
+                ${!data.exam_unlocked ? 'opacity-60' : ''}`}
+            >
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0
+                ${data.exam_result?.passed ? 'bg-primary text-background' : 'bg-accent/20 text-accent'}`}>
+                <Icon name={data.exam_result?.passed ? 'Award' : data.exam_unlocked ? 'GraduationCap' : 'Lock'} size={15} />
+              </div>
+              <div className="min-w-0">
+                <div className="text-sm font-semibold truncate">Финальный экзамен</div>
+                <div className="font-mono text-xs text-muted-foreground">
+                  {data.exam_result ? `результат: ${data.exam_result.percent}%` : `${data.exam.length} вопросов`}
+                </div>
+              </div>
+            </button>
           </div>
         </div>
       </main>
