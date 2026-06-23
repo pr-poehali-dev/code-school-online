@@ -12,6 +12,7 @@ import { useAuth } from '@/context/AuthContext';
 import ExamPanel from '@/components/learn/ExamPanel';
 import CodeExamPanel from '@/components/learn/CodeExamPanel';
 import CodePlayground from '@/components/learn/CodePlayground';
+import SupportButton from '@/components/learn/SupportButton';
 
 const SoftwareDialog = ({ lesson }: { lesson: Lesson }) => (
   <Dialog>
@@ -212,15 +213,7 @@ const Learn = () => {
             />
           )}
 
-          <a
-            href="https://t.me/+RFFL7zzQh8I4MmZi"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 w-full h-11 rounded-xl border border-border text-sm font-medium text-muted-foreground hover:text-primary hover:border-primary/50 transition-colors"
-          >
-            <Icon name="LifeBuoy" size={17} />
-            Столкнулись с проблемой?
-          </a>
+          <SupportButton />
         </div>
         ) : (
         <div className="lg:col-span-2 space-y-5">
@@ -396,15 +389,7 @@ const Learn = () => {
             <Icon name="ArrowRight" size={18} className="ml-1" />
           </Button>
 
-          <a
-            href="https://t.me/+RFFL7zzQh8I4MmZi"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 w-full h-11 rounded-xl border border-border text-sm font-medium text-muted-foreground hover:text-primary hover:border-primary/50 transition-colors"
-          >
-            <Icon name="LifeBuoy" size={17} />
-            Столкнулись с проблемой?
-          </a>
+          <SupportButton />
         </div>
         )}
 
