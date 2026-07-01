@@ -1,0 +1,33 @@
+{
+  "tests": [
+    {
+      "name": "Health check - schema is valid",
+      "method": "GET",
+      "path": "/?action=health",
+      "expectedStatus": 200,
+      "expectedBody": {"status": "ok"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Login requires email and password",
+      "method": "POST",
+      "path": "/?action=login",
+      "body": {},
+      "expectedStatus": 400
+    },
+    {
+      "name": "Login with wrong credentials fails",
+      "method": "POST",
+      "path": "/?action=login",
+      "body": {"email": "nobody-xyz@example.com", "password": "wrongpass123"},
+      "expectedStatus": 401
+    },
+    {
+      "name": "Unknown action returns 404",
+      "method": "POST",
+      "path": "/?action=unknown",
+      "body": {},
+      "expectedStatus": 404
+    }
+  ]
+}

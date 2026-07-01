@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { authApi, getToken, setToken, clearToken, DashboardState } from '@/lib/api';
+import { emailAuthApi, getToken, setToken, clearToken, DashboardState } from '@/lib/api';
 
 type User = DashboardState['user'];
 
@@ -39,7 +39,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const logout = async () => {
-    await authApi.logout();
+    await emailAuthApi.logout();
     setUserState(null);
   };
 

@@ -7,6 +7,7 @@ from utils.db import query_one, execute, escape, get_schema
 from utils.password import verify_password
 from utils.jwt_utils import create_access_token, create_refresh_token, hash_token, ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_DAYS
 from utils.email import is_email_enabled
+from utils.session import create_legacy_session
 from utils.http import response, error
 
 
@@ -90,9 +91,12 @@ def handle(event: dict, origin: str = '*') -> dict:
         VALUES ({escape(user_id)}, {escape(refresh_hash)}, {escape(expires_at)}, {escape(now)})
     """)
 
+    session_token = create_legacy_session(user_id)
+
     return response(200, {
         'access_token': access_token,
         'refresh_token': refresh_token,
+        'session_token': session_token,
         'token_type': 'Bearer',
         'expires_in': ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         'refresh_expires_in': REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,

@@ -4,12 +4,16 @@ import Icon from '@/components/ui/icon';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { authApi } from '@/lib/api';
+import { emailAuthApi } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 
+type Mode = 'login' | 'register' | 'verify' | 'reset-request' | 'reset-confirm';
+
 const Login = () => {
-  const [step, setStep] = useState<'email' | 'code'>('email');
+  const [mode, setMode] = useState<Mode>('login');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [refCode, setRefCode] = useState('');
@@ -28,19 +32,38 @@ const Login = () => {
     }
   }, [searchParams]);
 
-  const sendCode = async () => {
-    if (!email.includes('@')) {
-      toast.error('Введите корректный email');
-      return;
-    }
+  const finishLogin = async () => {
+    const state = await emailAuthApi.login(email, password);
+    login('', state.user);
+    navigate('/cabinet');
+  };
+
+  const doLogin = async () => {
+    if (!email.includes('@')) return toast.error('Введите корректный email');
+    if (!password) return toast.error('Введите пароль');
     setLoading(true);
     try {
-      const res = await authApi.requestCode(email);
-      setStep('code');
-      if (res.demo_code) {
-        toast.success(`Демо-режим: ваш код ${res.demo_code}`, { duration: 8000 });
+      await finishLogin();
+      toast.success('С возвращением!');
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const doRegister = async () => {
+    if (!email.includes('@')) return toast.error('Введите корректный email');
+    if (password.length < 8) return toast.error('Пароль минимум 8 символов');
+    setLoading(true);
+    try {
+      const res = await emailAuthApi.register(email, password, name);
+      if (res.email_verification_required) {
+        setMode('verify');
+        toast.success('Код подтверждения отправлен на почту');
       } else {
-        toast.success('Код отправлен на почту');
+        await finishLogin();
+        toast.success('Добро пожаловать в CodeBase! 🚀');
       }
     } catch (e) {
       toast.error((e as Error).message);
@@ -49,23 +72,57 @@ const Login = () => {
     }
   };
 
-  const verify = async () => {
-    if (code.length < 4) {
-      toast.error('Введите код из письма');
-      return;
-    }
+  const doVerify = async () => {
+    if (code.length < 4) return toast.error('Введите код из письма');
     setLoading(true);
     try {
-      const res = await authApi.verifyCode(email, code, refCode);
-      login(res.token, res.user);
-      if (res.is_new && refCode) localStorage.removeItem('codebase_ref');
-      toast.success(res.is_new ? 'Добро пожаловать в CodeBase! 🚀' : 'С возвращением!');
-      navigate('/cabinet');
+      await emailAuthApi.verifyEmail(email, code);
+      await finishLogin();
+      if (refCode) localStorage.removeItem('codebase_ref');
+      toast.success('Добро пожаловать в CodeBase! 🚀');
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
       setLoading(false);
     }
+  };
+
+  const doResetRequest = async () => {
+    if (!email.includes('@')) return toast.error('Введите корректный email');
+    setLoading(true);
+    try {
+      await emailAuthApi.requestReset(email);
+      setMode('reset-confirm');
+      toast.success('Код для сброса отправлен на почту');
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const doResetConfirm = async () => {
+    if (code.length < 4) return toast.error('Введите код из письма');
+    if (password.length < 8) return toast.error('Пароль минимум 8 символов');
+    setLoading(true);
+    try {
+      await emailAuthApi.confirmReset(email, code, password);
+      toast.success('Пароль обновлён! Войдите с новым паролем');
+      setCode('');
+      setMode('login');
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const titles: Record<Mode, string> = {
+    login: 'Вход в кабинет',
+    register: 'Регистрация',
+    verify: 'Подтвердите почту',
+    'reset-request': 'Восстановление пароля',
+    'reset-confirm': 'Новый пароль',
   };
 
   return (
@@ -81,44 +138,75 @@ const Login = () => {
         </Link>
 
         <div className="glass rounded-2xl p-8">
-          {step === 'email' ? (
-            <>
-              <h1 className="text-2xl font-extrabold mb-2">Вход в кабинет</h1>
-              <p className="text-sm text-muted-foreground mb-6">
-                Введите email — пришлём код для входа. Если аккаунта нет, создадим автоматически.
+          <h1 className="text-2xl font-extrabold mb-2">{titles[mode]}</h1>
+
+          {refCode && (mode === 'login' || mode === 'register') && (
+            <div className="flex items-center gap-2 rounded-xl bg-accent/10 border border-accent/30 p-3 mb-5 mt-3">
+              <Icon name="Gift" size={18} className="text-accent shrink-0" />
+              <p className="text-xs text-foreground">
+                Вы пришли по приглашению! Купите любой курс и получите <span className="font-bold text-accent">+150 XP</span> в подарок.
               </p>
-              {refCode && (
-                <div className="flex items-center gap-2 rounded-xl bg-accent/10 border border-accent/30 p-3 mb-5">
-                  <Icon name="Gift" size={18} className="text-accent shrink-0" />
-                  <p className="text-xs text-foreground">
-                    Вы пришли по приглашению! Купите любой курс и получите <span className="font-bold text-accent">+150 XP</span> в подарок.
-                  </p>
-                </div>
+            </div>
+          )}
+
+          {(mode === 'login' || mode === 'register' || mode === 'reset-request') && (
+            <>
+              <p className="text-sm text-muted-foreground mb-6 mt-1">
+                {mode === 'login' && 'Введите email и пароль от аккаунта.'}
+                {mode === 'register' && 'Создайте аккаунт по email и паролю.'}
+                {mode === 'reset-request' && 'Введите email — пришлём код для сброса пароля.'}
+              </p>
+
+              {mode === 'register' && (
+                <>
+                  <label className="text-sm font-medium mb-2 block">Имя</label>
+                  <Input
+                    type="text"
+                    placeholder="Как вас зовут"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="h-12 bg-background/60 border-border mb-4"
+                  />
+                </>
               )}
+
               <label className="text-sm font-medium mb-2 block">Email</label>
               <Input
                 type="email"
                 placeholder="your@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && sendCode()}
-                className="h-12 bg-background/60 border-border font-mono mb-5"
+                className="h-12 bg-background/60 border-border font-mono mb-4"
               />
-              <Button onClick={sendCode} disabled={loading} className="w-full h-12 font-semibold glow-green">
-                {loading ? 'Отправляем...' : 'Получить код'}
+
+              {mode !== 'reset-request' && (
+                <>
+                  <label className="text-sm font-medium mb-2 block">Пароль</label>
+                  <Input
+                    type="password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && (mode === 'login' ? doLogin() : doRegister())}
+                    className="h-12 bg-background/60 border-border mb-5"
+                  />
+                </>
+              )}
+
+              <Button
+                onClick={mode === 'login' ? doLogin : mode === 'register' ? doRegister : doResetRequest}
+                disabled={loading}
+                className="w-full h-12 font-semibold glow-green"
+              >
+                {loading ? 'Подождите...' : mode === 'login' ? 'Войти' : mode === 'register' ? 'Создать аккаунт' : 'Получить код'}
                 {!loading && <Icon name="ArrowRight" size={18} className="ml-1" />}
               </Button>
             </>
-          ) : (
+          )}
+
+          {(mode === 'verify' || mode === 'reset-confirm') && (
             <>
-              <button
-                onClick={() => setStep('email')}
-                className="flex items-center gap-1 text-sm text-muted-foreground hover:text-primary mb-4 transition-colors"
-              >
-                <Icon name="ArrowLeft" size={16} /> назад
-              </button>
-              <h1 className="text-2xl font-extrabold mb-2">Введите код</h1>
-              <p className="text-sm text-muted-foreground mb-6">
+              <p className="text-sm text-muted-foreground mb-6 mt-1">
                 Код отправлен на <span className="text-primary font-mono">{email}</span>
               </p>
               <label className="text-sm font-medium mb-2 block">Код из письма</label>
@@ -128,20 +216,52 @@ const Login = () => {
                 placeholder="000000"
                 value={code}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                onKeyDown={(e) => e.key === 'Enter' && verify()}
-                className="h-14 bg-background/60 border-border font-mono text-2xl tracking-[0.5em] text-center mb-5"
+                className="h-14 bg-background/60 border-border font-mono text-2xl tracking-[0.5em] text-center mb-4"
               />
-              <Button onClick={verify} disabled={loading} className="w-full h-12 font-semibold glow-green">
-                {loading ? 'Проверяем...' : 'Войти'}
-              </Button>
-              <button
-                onClick={sendCode}
-                className="w-full text-center text-sm text-muted-foreground hover:text-primary mt-4 transition-colors"
+              {mode === 'reset-confirm' && (
+                <>
+                  <label className="text-sm font-medium mb-2 block">Новый пароль</label>
+                  <Input
+                    type="password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="h-12 bg-background/60 border-border mb-5"
+                  />
+                </>
+              )}
+              <Button
+                onClick={mode === 'verify' ? doVerify : doResetConfirm}
+                disabled={loading}
+                className="w-full h-12 font-semibold glow-green"
               >
-                Отправить код повторно
-              </button>
+                {loading ? 'Проверяем...' : mode === 'verify' ? 'Подтвердить' : 'Сохранить пароль'}
+              </Button>
             </>
           )}
+
+          <div className="mt-6 space-y-2 text-center text-sm">
+            {mode === 'login' && (
+              <>
+                <button onClick={() => setMode('register')} className="block w-full text-muted-foreground hover:text-primary transition-colors">
+                  Нет аккаунта? <span className="text-primary font-medium">Зарегистрироваться</span>
+                </button>
+                <button onClick={() => setMode('reset-request')} className="block w-full text-muted-foreground hover:text-primary transition-colors">
+                  Забыли пароль?
+                </button>
+              </>
+            )}
+            {mode === 'register' && (
+              <button onClick={() => setMode('login')} className="block w-full text-muted-foreground hover:text-primary transition-colors">
+                Уже есть аккаунт? <span className="text-primary font-medium">Войти</span>
+              </button>
+            )}
+            {(mode === 'verify' || mode === 'reset-request' || mode === 'reset-confirm') && (
+              <button onClick={() => setMode('login')} className="flex items-center justify-center gap-1 w-full text-muted-foreground hover:text-primary transition-colors">
+                <Icon name="ArrowLeft" size={16} /> к входу
+              </button>
+            )}
+          </div>
         </div>
 
         <Link to="/" className="block text-center text-sm text-muted-foreground hover:text-primary mt-6 transition-colors">
