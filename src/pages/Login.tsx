@@ -4,7 +4,7 @@ import Icon from '@/components/ui/icon';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { emailAuthApi } from '@/lib/api';
+import { emailAuthApi, vkAuthApi } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 
 type Mode = 'login' | 'register' | 'verify' | 'reset-request' | 'reset-confirm';
@@ -117,6 +117,16 @@ const Login = () => {
     }
   };
 
+  const doVkLogin = async () => {
+    setLoading(true);
+    try {
+      await vkAuthApi.start();
+    } catch (e) {
+      toast.error((e as Error).message || 'Вход через VK пока недоступен');
+      setLoading(false);
+    }
+  };
+
   const titles: Record<Mode, string> = {
     login: 'Вход в кабинет',
     register: 'Регистрация',
@@ -201,6 +211,26 @@ const Login = () => {
                 {loading ? 'Подождите...' : mode === 'login' ? 'Войти' : mode === 'register' ? 'Создать аккаунт' : 'Получить код'}
                 {!loading && <Icon name="ArrowRight" size={18} className="ml-1" />}
               </Button>
+
+              {(mode === 'login' || mode === 'register') && (
+                <>
+                  <div className="flex items-center gap-3 my-5">
+                    <div className="h-px flex-1 bg-border" />
+                    <span className="text-xs text-muted-foreground">или</span>
+                    <div className="h-px flex-1 bg-border" />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={doVkLogin}
+                    disabled={loading}
+                    className="flex items-center justify-center gap-2 w-full h-12 rounded-xl font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+                    style={{ background: '#0077FF' }}
+                  >
+                    <Icon name="AtSign" size={20} />
+                    Войти через ВКонтакте
+                  </button>
+                </>
+              )}
             </>
           )}
 

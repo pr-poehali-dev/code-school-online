@@ -1,6 +1,7 @@
 const AUTH_URL = 'https://functions.poehali.dev/3bd8b5d2-2970-4383-83eb-d7c0fc4447a3';
 const DASHBOARD_URL = 'https://functions.poehali.dev/e6eaca0a-8f77-4db4-af4a-5ba03ae1522c';
 const AUTH_EMAIL_URL = 'https://functions.poehali.dev/f4c6879e-bdea-4ea6-97d1-efd3a4b90dfd';
+const VK_AUTH_URL = 'https://functions.poehali.dev/9451e109-e6b4-41bb-9b9e-147853312695';
 
 const REFRESH_TOKEN_KEY = 'codebase_refresh_token';
 export const getRefreshToken = () => localStorage.getItem(REFRESH_TOKEN_KEY) || '';
@@ -181,6 +182,40 @@ export const emailAuthApi = {
       clearToken();
       clearRefreshToken();
     }
+  },
+};
+
+const VK_STATE_KEY = 'vk_state';
+const VK_VERIFIER_KEY = 'vk_code_verifier';
+
+export const vkAuthApi = {
+  start: async () => {
+    const res = await fetch(`${VK_AUTH_URL}?action=auth-url`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'VK недоступен');
+    if (data.state) sessionStorage.setItem(VK_STATE_KEY, data.state);
+    if (data.code_verifier) sessionStorage.setItem(VK_VERIFIER_KEY, data.code_verifier);
+    window.location.href = data.auth_url;
+  },
+  handleCallback: async (): Promise<DashboardState> => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    const device_id = params.get('device_id') || '';
+    const state = params.get('state');
+    if (!code) throw new Error('Не получен код авторизации');
+    const storedState = sessionStorage.getItem(VK_STATE_KEY);
+    if (storedState && state !== storedState) throw new Error('Ошибка проверки безопасности');
+    const code_verifier = sessionStorage.getItem(VK_VERIFIER_KEY) || '';
+    const res = (await postJson(`${VK_AUTH_URL}?action=callback`, {
+      code,
+      code_verifier,
+      device_id,
+    })) as { session_token: string; refresh_token: string };
+    setToken(res.session_token);
+    if (res.refresh_token) setRefreshToken(res.refresh_token);
+    sessionStorage.removeItem(VK_STATE_KEY);
+    sessionStorage.removeItem(VK_VERIFIER_KEY);
+    return dashboardApi.get();
   },
 };
 

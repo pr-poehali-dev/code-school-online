@@ -1,0 +1,23 @@
+{
+  "tests": [
+    {
+      "name": "CORS preflight OPTIONS",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Unknown action returns 400",
+      "method": "GET",
+      "path": "/?action=unknown",
+      "expectedStatus": 400
+    },
+    {
+      "name": "Logout without token succeeds",
+      "method": "POST",
+      "path": "/?action=logout",
+      "body": {},
+      "expectedStatus": 200
+    }
+  ]
+}

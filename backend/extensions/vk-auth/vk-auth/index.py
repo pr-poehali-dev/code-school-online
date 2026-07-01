@@ -367,15 +367,17 @@ def handle_callback(event: dict, origin: str) -> dict:
                     photo_url = db_avatar or photo_url
                 else:
                     # 3. Create new user
+                    # email column is NOT NULL in this project — use a placeholder if VK gave none
+                    new_email = vk_email or f'vk_{vk_user_id}@vk.local'
                     cur.execute(
                         f"""INSERT INTO {S}users
                             (vk_id, email, name, avatar_url, email_verified, created_at, updated_at, last_login_at)
                             VALUES (%s, %s, %s, %s, TRUE, %s, %s, %s)
                             RETURNING id""",
-                        (str(vk_user_id), vk_email, full_name, photo_url, now, now, now)
+                        (str(vk_user_id), new_email, full_name, photo_url, now, now, now)
                     )
                     user_id = cur.fetchone()[0]
-                    email = vk_email
+                    email = new_email
                     name = full_name
 
             # Create tokens
@@ -391,11 +393,21 @@ def handle_callback(event: dict, origin: str) -> dict:
                 (user_id, refresh_token_hash, refresh_expires, now)
             )
 
+            # Legacy session token so the existing dashboard (cabinet) keeps working
+            session_token = secrets.token_hex(32)
+            session_expires = (datetime.now(timezone.utc) + timedelta(days=30)).isoformat()
+            cur.execute(
+                f"""INSERT INTO {S}sessions (user_id, token, expires_at)
+                    VALUES (%s, %s, %s)""",
+                (user_id, session_token, session_expires)
+            )
+
             conn.commit()
 
             return response(200, {
                 'access_token': access_token,
                 'refresh_token': refresh_token,
+                'session_token': session_token,
                 'expires_in': expires_in,
                 'user': {
                     'id': user_id,
