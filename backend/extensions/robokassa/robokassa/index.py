@@ -21,6 +21,15 @@ def get_db_connection():
     return psycopg2.connect(dsn)
 
 
+def get_user_id_by_token(cur, token: str):
+    """Определяет пользователя по токену сессии (кабинет)."""
+    if not token:
+        return None
+    cur.execute("SELECT user_id FROM sessions WHERE token=%s AND expires_at > NOW()", (token,))
+    row = cur.fetchone()
+    return row[0] if row else None
+
+
 HEADERS = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -57,6 +66,7 @@ def handler(event: dict, context) -> dict:
         payload = json.loads(body_str)
 
         amount = float(payload.get('amount', 0))
+        user_id = payload.get('user_id')
         user_name = str(payload.get('user_name', ''))
         user_email = str(payload.get('user_email', ''))
         user_phone = str(payload.get('user_phone', ''))
@@ -74,6 +84,13 @@ def handler(event: dict, context) -> dict:
         conn = get_db_connection()
         cur = conn.cursor()
 
+        # Определяем пользователя по токену сессии (приоритет), иначе из тела
+        headers = event.get('headers', {})
+        token = headers.get('X-Auth-Token') or headers.get('x-auth-token', '')
+        token_user_id = get_user_id_by_token(cur, token)
+        if token_user_id:
+            user_id = token_user_id
+
         # Генерация уникального InvoiceID
         for _ in range(10):
             robokassa_inv_id = random.randint(100000, 2147483647)
@@ -84,10 +101,10 @@ def handler(event: dict, context) -> dict:
         order_number = f"ORD-{datetime.now().strftime('%Y%m%d')}-{robokassa_inv_id}"
 
         cur.execute("""
-            INSERT INTO orders (order_number, user_name, user_email, user_phone, amount, robokassa_inv_id, status, delivery_address, order_comment)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO orders (order_number, user_id, user_name, user_email, user_phone, amount, robokassa_inv_id, status, delivery_address, order_comment)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
-        """, (order_number, user_name, user_email, user_phone, round(amount, 2), robokassa_inv_id, 'pending', user_address, order_comment))
+        """, (order_number, user_id, user_name, user_email, user_phone, round(amount, 2), robokassa_inv_id, 'pending', user_address, order_comment))
 
         order_id = cur.fetchone()[0]
 

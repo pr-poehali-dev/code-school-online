@@ -2,6 +2,7 @@ const AUTH_URL = 'https://functions.poehali.dev/3bd8b5d2-2970-4383-83eb-d7c0fc44
 const DASHBOARD_URL = 'https://functions.poehali.dev/e6eaca0a-8f77-4db4-af4a-5ba03ae1522c';
 const AUTH_EMAIL_URL = 'https://functions.poehali.dev/f4c6879e-bdea-4ea6-97d1-efd3a4b90dfd';
 const VK_AUTH_URL = 'https://functions.poehali.dev/9451e109-e6b4-41bb-9b9e-147853312695';
+const ROBOKASSA_URL = 'https://functions.poehali.dev/9a0e4c92-bbc7-4858-968a-e09e4388b7b8';
 
 const REFRESH_TOKEN_KEY = 'codebase_refresh_token';
 export const getRefreshToken = () => localStorage.getItem(REFRESH_TOKEN_KEY) || '';
@@ -216,6 +217,31 @@ export const vkAuthApi = {
     sessionStorage.removeItem(VK_STATE_KEY);
     sessionStorage.removeItem(VK_VERIFIER_KEY);
     return dashboardApi.get();
+  },
+};
+
+export const robokassaApi = {
+  topupBalance: async (
+    amount: number,
+    user: { name: string; email: string; id: number },
+  ): Promise<{ payment_url: string; order_number: string }> => {
+    const res = await fetch(ROBOKASSA_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Auth-Token': getToken() },
+      body: JSON.stringify({
+        amount,
+        user_id: user.id,
+        user_name: user.name || 'Пользователь',
+        user_email: user.email || 'user@codebaseschool.ru',
+        order_comment: 'Пополнение баланса CodeBase',
+        cart_items: [{ id: 'balance', name: 'Пополнение баланса', price: amount, quantity: 1 }],
+        success_url: `${window.location.origin}/cabinet?payment=success`,
+        fail_url: `${window.location.origin}/cabinet?payment=fail`,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Не удалось создать платёж');
+    return data;
   },
 };
 

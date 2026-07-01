@@ -1,0 +1,16 @@
+{
+  "tests": [
+    {
+      "name": "CORS preflight OPTIONS",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Method not allowed on GET",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 405
+    }
+  ]
+}

@@ -9,7 +9,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { dashboardApi, DashboardState, ApiCourse } from '@/lib/api';
+import { dashboardApi, robokassaApi, DashboardState, ApiCourse } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 
 const topupOptions = [500, 1000, 2000, 5000];
@@ -28,6 +28,7 @@ const Cabinet = () => {
   const [busy, setBusy] = useState('');
   const [nameInput, setNameInput] = useState('');
   const [xpAmount, setXpAmount] = useState(500);
+  const [payAmount, setPayAmount] = useState(1000);
 
   useEffect(() => {
     if (!authLoading && !isAuthed) navigate('/login');
@@ -42,13 +43,35 @@ const Cabinet = () => {
 
   useEffect(() => { if (isAuthed) load(); }, [isAuthed]);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const payment = params.get('payment');
+    if (payment === 'success') {
+      toast.success('Оплата прошла! Баланс пополнится в течение минуты.');
+    } else if (payment === 'fail') {
+      toast.error('Оплата не завершена. Попробуйте ещё раз.');
+    }
+    if (payment) {
+      window.history.replaceState({}, '', '/cabinet');
+    }
+  }, []);
+
   const apply = (s: DashboardState) => { setState(s); setUser(s.user); };
 
-  const topup = async (amount: number) => {
+  const payTopup = async (amount: number) => {
+    if (!state || amount < 1) return;
     setBusy('topup');
-    try { apply(await dashboardApi.topup(amount)); toast.success(`Баланс пополнен на ${amount} ₽`); }
-    catch (e) { toast.error((e as Error).message); }
-    finally { setBusy(''); }
+    try {
+      const { payment_url } = await robokassaApi.topupBalance(amount, {
+        id: state.user.id,
+        name: state.user.name,
+        email: state.user.email,
+      });
+      window.location.href = payment_url;
+    } catch (e) {
+      toast.error((e as Error).message);
+      setBusy('');
+    }
   };
 
   const buy = async (c: ApiCourse) => {
@@ -245,17 +268,31 @@ const Cabinet = () => {
               <div className="text-5xl font-extrabold font-mono text-primary mb-8">
                 {user.balance.toLocaleString('ru')} ₽
               </div>
-              <div className="text-sm font-medium mb-3 text-left">Быстрое пополнение</div>
+              <div className="text-sm font-medium mb-3 text-left">Выберите сумму пополнения</div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
                 {topupOptions.map((a) => (
-                  <Button key={a} variant="outline" disabled={busy === 'topup'} onClick={() => topup(a)}
-                    className="border-border h-14 font-mono font-bold hover:border-primary hover:text-primary">
+                  <Button key={a} variant="outline" onClick={() => setPayAmount(a)}
+                    className={`border-border h-14 font-mono font-bold hover:border-primary hover:text-primary ${payAmount === a ? 'border-primary text-primary' : ''}`}>
                     +{a}
                   </Button>
                 ))}
               </div>
-              <p className="text-xs text-muted-foreground">
-                Демо-режим: баланс пополняется мгновенно без реальной оплаты.
+              <label className="text-sm font-medium mb-2 block text-left">Или введите свою сумму, ₽</label>
+              <Input
+                type="number" min={1} value={payAmount}
+                onChange={(e) => setPayAmount(Math.max(0, parseInt(e.target.value) || 0))}
+                className="h-12 bg-background/60 border-border font-mono mb-4"
+              />
+              <Button
+                onClick={() => payTopup(payAmount)}
+                disabled={busy === 'topup' || payAmount < 1}
+                className="w-full h-12 font-semibold glow-green"
+              >
+                <Icon name="CreditCard" size={18} className="mr-1.5" />
+                {busy === 'topup' ? 'Переходим к оплате...' : `Пополнить на ${payAmount.toLocaleString('ru')} ₽`}
+              </Button>
+              <p className="text-xs text-muted-foreground mt-3">
+                Оплата картой через Robokassa. Баланс зачислится автоматически после оплаты.
               </p>
             </div>
 
