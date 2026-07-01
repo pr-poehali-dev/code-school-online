@@ -22,10 +22,10 @@ def validate_password(password: str) -> tuple[bool, str]:
     """Validate password strength. Returns (is_valid, error_message)."""
     if len(password) < 8:
         return False, "Пароль должен содержать минимум 8 символов"
-    if len(password) > 128:
+    if len(password.encode('utf-8')) > 72:
         return False, "Пароль слишком длинный"
-    if not re.search(r'[A-Za-z]', password):
-        return False, "Пароль должен содержать хотя бы одну букву"
+    if not re.search(r'[^\W\d_]', password, re.UNICODE):
+        return False, "Пароль должен содержать хотя бы одну букву (русскую или английскую)"
     if not re.search(r'\d', password):
         return False, "Пароль должен содержать хотя бы одну цифру"
     return True, ""
