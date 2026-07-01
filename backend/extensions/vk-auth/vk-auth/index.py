@@ -289,12 +289,15 @@ def handle_callback(event: dict, origin: str) -> dict:
     redirect_uri = os.environ.get('VK_REDIRECT_URI', '')
 
     if not client_id or not client_secret:
+        print(f"VK callback config: VK_CLIENT_ID set={bool(client_id)}, "
+              f"VK_CLIENT_SECRET set={bool(client_secret)}")
         return error(500, 'Server configuration error', origin)
 
     try:
         # Validate JWT_SECRET early
         get_jwt_secret()
     except ValueError:
+        print(f"VK callback config: JWT_SECRET length={len(os.environ.get('JWT_SECRET', ''))} (need >= 32)")
         return error(500, 'Server configuration error', origin)
 
     try:
