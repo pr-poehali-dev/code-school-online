@@ -1,0 +1,19 @@
+{
+  "name": "CodeBase — школа программирования",
+  "short_name": "CodeBase",
+  "description": "Онлайн-школа базового программирования. Учись писать код с нуля.",
+  "start_url": "/cabinet",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0a0f",
+  "theme_color": "#0a0a0f",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

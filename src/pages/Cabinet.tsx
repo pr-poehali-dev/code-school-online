@@ -11,6 +11,7 @@ import {
 import { toast } from 'sonner';
 import { dashboardApi, robokassaApi, DashboardState, ApiCourse } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
+import InstallAppCard from '@/components/InstallAppCard';
 
 const topupOptions = [500, 1000, 2000, 5000];
 
@@ -447,6 +448,8 @@ const Cabinet = () => {
                 </Button>
               </div>
             </div>
+
+            <InstallAppCard />
           </TabsContent>
         </Tabs>
       </main>
