@@ -1,12 +1,11 @@
 """Token refresh handler."""
-import json
 import os
 from datetime import datetime
 
 from utils.db import query_one, escape, get_schema
 from utils.jwt_utils import create_access_token, decode_refresh_token, hash_token, ACCESS_TOKEN_EXPIRE_MINUTES
 from utils.session import create_legacy_session
-from utils.http import response, error
+from utils.http import response, error, parse_body
 
 
 def handle(event: dict, origin: str = '*') -> dict:
@@ -15,8 +14,7 @@ def handle(event: dict, origin: str = '*') -> dict:
     if not jwt_secret:
         return error(500, 'JWT_SECRET not configured', origin)
 
-    body_str = event.get('body', '{}')
-    payload = json.loads(body_str)
+    payload = parse_body(event)
     refresh_token = payload.get('refresh_token', '')
 
     if not refresh_token:

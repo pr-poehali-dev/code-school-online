@@ -1,5 +1,4 @@
 """Login handler."""
-import json
 import os
 from datetime import datetime, timedelta
 
@@ -8,7 +7,7 @@ from utils.password import verify_password
 from utils.jwt_utils import create_access_token, create_refresh_token, hash_token, ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_DAYS
 from utils.email import is_email_enabled
 from utils.session import create_legacy_session
-from utils.http import response, error
+from utils.http import response, error, parse_body
 
 
 MAX_LOGIN_ATTEMPTS = int(os.environ.get('MAX_LOGIN_ATTEMPTS', '5'))
@@ -21,8 +20,7 @@ def handle(event: dict, origin: str = '*') -> dict:
     if not jwt_secret:
         return error(500, 'JWT_SECRET not configured', origin)
 
-    body_str = event.get('body', '{}')
-    payload = json.loads(body_str)
+    payload = parse_body(event)
 
     email = str(payload.get('email', '')).lower().strip()
     password = str(payload.get('password', ''))

@@ -10,6 +10,8 @@ Routes (via ?action= query parameter):
   POST /auth?action=reset-password - Request/complete password reset
   GET  /auth?action=health         - Check DB schema
 """
+import traceback
+
 from handlers import register, login, logout, refresh, reset_password, health, verify_email
 from utils.http import options_response, error, get_origin_from_event
 
@@ -50,4 +52,9 @@ def handler(event: dict, context) -> dict:
     if not action or action not in ROUTES:
         return error(404, f'Unknown action: {action}. Use ?action=health|login|register|refresh|logout|reset-password|verify-email', origin)
 
-    return ROUTES[action](event, origin)
+    try:
+        return ROUTES[action](event, origin)
+    except Exception as exc:
+        print('AUTH_ERROR', action, repr(exc))
+        traceback.print_exc()
+        return error(500, f'Внутренняя ошибка: {exc}', origin)

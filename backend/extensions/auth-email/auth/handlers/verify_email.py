@@ -1,15 +1,13 @@
 """Email verification handler."""
-import json
 from datetime import datetime
 
 from utils.db import query_one, execute, escape, get_schema
-from utils.http import response, error
+from utils.http import response, error, parse_body
 
 
 def handle(event: dict, origin: str = '*') -> dict:
     """Verify email with code. POST {email, code}."""
-    body_str = event.get('body', '{}')
-    payload = json.loads(body_str)
+    payload = parse_body(event)
 
     email = str(payload.get('email', '')).lower().strip()
     code = str(payload.get('code', '')).strip()

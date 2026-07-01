@@ -4,6 +4,18 @@ import json
 from typing import Optional
 
 
+def parse_body(event: dict) -> dict:
+    """Safely parse JSON body from event. Returns {} for empty/invalid body."""
+    body_str = event.get('body') or '{}'
+    if not body_str.strip():
+        return {}
+    try:
+        data = json.loads(body_str)
+        return data if isinstance(data, dict) else {}
+    except (ValueError, TypeError):
+        return {}
+
+
 def get_origin_from_event(event: dict) -> str:
     """Get Origin header from request, fallback to CORS_ORIGIN env or '*'."""
     headers = event.get('headers', {})

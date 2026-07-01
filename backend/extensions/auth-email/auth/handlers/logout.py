@@ -1,15 +1,12 @@
 """Logout handler."""
-import json
-
 from utils.db import execute, escape, get_schema
 from utils.jwt_utils import hash_token
-from utils.http import response
+from utils.http import response, parse_body
 
 
 def handle(event: dict, origin: str = '*') -> dict:
     """Logout user by revoking refresh token from request body."""
-    body_str = event.get('body', '{}')
-    payload = json.loads(body_str)
+    payload = parse_body(event)
     refresh_token = payload.get('refresh_token', '')
 
     if refresh_token:

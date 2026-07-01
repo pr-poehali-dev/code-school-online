@@ -1,11 +1,10 @@
 """Registration handler."""
-import json
 from datetime import datetime, timedelta
 
 from utils.db import query_one, execute_returning, execute, escape, get_schema
 from utils.password import hash_password, verify_password, validate_password, validate_email
 from utils.email import is_email_enabled, generate_code, send_verification_code
-from utils.http import response, error
+from utils.http import response, error, parse_body
 
 
 VERIFICATION_CODE_HOURS = 24
@@ -33,8 +32,7 @@ def _send_verification_code(user_id: int, email: str, S: str) -> dict:
 
 def handle(event: dict, origin: str = '*') -> dict:
     """Register new user with email and password."""
-    body_str = event.get('body', '{}')
-    payload = json.loads(body_str)
+    payload = parse_body(event)
 
     email = str(payload.get('email', '')).lower().strip()
     password = str(payload.get('password', ''))

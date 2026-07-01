@@ -1,11 +1,10 @@
 """Password reset handler."""
-import json
 from datetime import datetime, timedelta
 
 from utils.db import query_one, execute, escape, get_schema
 from utils.password import hash_password, validate_password
 from utils.email import is_email_enabled, generate_code, send_password_reset_code
-from utils.http import response, error
+from utils.http import response, error, parse_body
 
 
 RESET_CODE_LIFETIME_HOURS = 1
@@ -17,8 +16,7 @@ def handle(event: dict, origin: str = '*') -> dict:
     1. POST {email} - request reset, sends code to email
     2. POST {email, code, new_password} - set new password with code
     """
-    body_str = event.get('body', '{}')
-    payload = json.loads(body_str)
+    payload = parse_body(event)
 
     email = str(payload.get('email', '')).lower().strip()
     code = str(payload.get('code', '')).strip()
