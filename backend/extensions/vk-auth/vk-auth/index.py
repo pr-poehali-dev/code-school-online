@@ -232,6 +232,9 @@ def handle_auth_url(event: dict, origin: str) -> dict:
     redirect_uri = os.environ.get('VK_REDIRECT_URI', '')
 
     if not client_id or not redirect_uri:
+        print(f"VK config check: VK_CLIENT_ID set={bool(client_id)}, "
+              f"VK_REDIRECT_URI set={bool(redirect_uri)}, "
+              f"VK_CLIENT_SECRET set={bool(os.environ.get('VK_CLIENT_SECRET'))}")
         return error(500, 'Server configuration error', origin)
 
     # Generate state for CSRF protection
