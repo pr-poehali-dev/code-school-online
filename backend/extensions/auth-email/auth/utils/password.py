@@ -9,8 +9,13 @@ def hash_password(password: str) -> str:
 
 
 def verify_password(password: str, password_hash: str) -> bool:
-    """Verify password against bcrypt hash."""
-    return bcrypt.checkpw(password.encode(), password_hash.encode())
+    """Verify password against bcrypt hash. Returns False if no hash set."""
+    if not password or not password_hash:
+        return False
+    try:
+        return bcrypt.checkpw(password.encode(), password_hash.encode())
+    except (ValueError, TypeError):
+        return False
 
 
 def validate_password(password: str) -> tuple[bool, str]:

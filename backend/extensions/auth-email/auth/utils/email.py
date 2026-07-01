@@ -37,16 +37,17 @@ def send_email(to_email: str, subject: str, html_body: str, text_body: str) -> b
 
     try:
         if smtp_port == 465:
-            with smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=10) as server:
+            with smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=15) as server:
                 server.login(smtp_user, smtp_password)
                 server.sendmail(smtp_from, to_email, msg.as_string())
         else:
-            with smtplib.SMTP(smtp_host, smtp_port, timeout=10) as server:
+            with smtplib.SMTP(smtp_host, smtp_port, timeout=15) as server:
                 server.starttls()
                 server.login(smtp_user, smtp_password)
                 server.sendmail(smtp_from, to_email, msg.as_string())
         return True
-    except (smtplib.SMTPException, OSError):
+    except (smtplib.SMTPException, OSError) as exc:
+        print('SMTP_ERROR', smtp_host, smtp_port, 'from=', smtp_from, repr(exc))
         return False
 
 
