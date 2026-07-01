@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="42%" r="55%">
+      <stop offset="0%" stop-color="#19F58C" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#0B0E1A" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse">
+      <path d="M48 0H0V48" fill="none" stroke="#1B2138" stroke-width="1"/>
+    </pattern>
+  </defs>
+
+  <rect width="1200" height="630" fill="#0B0E1A"/>
+  <rect width="1200" height="630" fill="url(#grid)"/>
+  <rect width="1200" height="630" fill="url(#glow)"/>
+
+  <text x="600" y="300" text-anchor="middle"
+        font-family="'JetBrains Mono','Courier New',monospace"
+        font-size="110" font-weight="800" letter-spacing="-2">
+    <tspan fill="#19F58C">{ </tspan><tspan fill="#F7FAFC">CodeBase</tspan><tspan fill="#19F58C"> }</tspan>
+  </text>
+
+  <text x="600" y="380" text-anchor="middle"
+        font-family="'Golos Text','Arial',sans-serif"
+        font-size="40" font-weight="600" fill="#8A93AB">
+    Онлайн-школа программирования
+  </text>
+
+  <text x="600" y="452" text-anchor="middle"
+        font-family="'Golos Text','Arial',sans-serif"
+        font-size="26" font-weight="500" fill="#19F58C">
+    Учись писать код с нуля
+  </text>
+</svg>
