@@ -34,7 +34,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const login = (token: string, u: User) => {
-    setToken(token);
+    // token may be empty when it was already stored by the auth API (email/VK).
+    // In that case keep the existing session token instead of wiping it.
+    if (token) setToken(token);
     setUserState(u);
   };
 
