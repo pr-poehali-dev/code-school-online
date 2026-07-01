@@ -4,7 +4,7 @@ import Icon from '@/components/ui/icon';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { emailAuthApi, vkAuthApi } from '@/lib/api';
+import { emailAuthApi, vkAuthApi, yandexAuthApi } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 
 type Mode = 'login' | 'register' | 'verify' | 'reset-request' | 'reset-confirm';
@@ -127,6 +127,16 @@ const Login = () => {
     }
   };
 
+  const doYandexLogin = async () => {
+    setLoading(true);
+    try {
+      await yandexAuthApi.start();
+    } catch (e) {
+      toast.error((e as Error).message || 'Вход через Яндекс пока недоступен');
+      setLoading(false);
+    }
+  };
+
   const titles: Record<Mode, string> = {
     login: 'Вход в кабинет',
     register: 'Регистрация',
@@ -228,6 +238,15 @@ const Login = () => {
                   >
                     <Icon name="AtSign" size={20} />
                     Войти через ВКонтакте
+                  </button>
+                  <button
+                    type="button"
+                    onClick={doYandexLogin}
+                    disabled={loading}
+                    className="flex items-center justify-center gap-2 w-full h-12 rounded-xl font-semibold text-black bg-white transition-opacity hover:opacity-90 disabled:opacity-60 mt-3"
+                  >
+                    <span className="flex items-center justify-center w-5 h-5 rounded-full bg-[#FC3F1D] text-white font-bold text-sm leading-none">Я</span>
+                    Войти через Яндекс ID
                   </button>
                 </>
               )}

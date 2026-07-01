@@ -2,6 +2,7 @@ const AUTH_URL = 'https://functions.poehali.dev/3bd8b5d2-2970-4383-83eb-d7c0fc44
 const DASHBOARD_URL = 'https://functions.poehali.dev/e6eaca0a-8f77-4db4-af4a-5ba03ae1522c';
 const AUTH_EMAIL_URL = 'https://functions.poehali.dev/f4c6879e-bdea-4ea6-97d1-efd3a4b90dfd';
 const VK_AUTH_URL = 'https://functions.poehali.dev/9451e109-e6b4-41bb-9b9e-147853312695';
+const YANDEX_AUTH_URL = 'https://functions.poehali.dev/d31d4c36-8b53-4391-9b95-6475d89f9273';
 const ROBOKASSA_URL = 'https://functions.poehali.dev/9a0e4c92-bbc7-4858-968a-e09e4388b7b8';
 
 const REFRESH_TOKEN_KEY = 'codebase_refresh_token';
@@ -216,6 +217,33 @@ export const vkAuthApi = {
     if (res.refresh_token) setRefreshToken(res.refresh_token);
     sessionStorage.removeItem(VK_STATE_KEY);
     sessionStorage.removeItem(VK_VERIFIER_KEY);
+    return dashboardApi.get();
+  },
+};
+
+const YANDEX_STATE_KEY = 'yandex_state';
+
+export const yandexAuthApi = {
+  start: async () => {
+    const res = await fetch(`${YANDEX_AUTH_URL}?action=auth-url`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Яндекс недоступен');
+    if (data.state) sessionStorage.setItem(YANDEX_STATE_KEY, data.state);
+    window.location.href = data.auth_url;
+  },
+  handleCallback: async (): Promise<DashboardState> => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    const state = params.get('state');
+    if (!code) throw new Error('Не получен код авторизации');
+    const storedState = sessionStorage.getItem(YANDEX_STATE_KEY);
+    if (storedState && state !== storedState) throw new Error('Ошибка проверки безопасности');
+    const res = (await postJson(`${YANDEX_AUTH_URL}?action=callback`, {
+      code,
+    })) as { session_token: string; refresh_token: string };
+    setToken(res.session_token);
+    if (res.refresh_token) setRefreshToken(res.refresh_token);
+    sessionStorage.removeItem(YANDEX_STATE_KEY);
     return dashboardApi.get();
   },
 };
