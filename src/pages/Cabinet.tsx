@@ -456,6 +456,7 @@ const CourseCard = ({ c, busy, onBuy, balance }: {
   const isFree = c.price === 0;
   const isLocked = !!c.locked;
   const canAfford = isFree || balance >= c.price;
+  const needsVpn = (c.tags || []).some((t) => t.toUpperCase() === 'VPN');
   return (
     <div className={`glass rounded-2xl p-5 relative overflow-hidden flex flex-col ${isLocked ? 'opacity-80' : ''}`}>
       <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full blur-3xl opacity-40"
@@ -464,14 +465,21 @@ const CourseCard = ({ c, busy, onBuy, balance }: {
         <div className="flex items-start justify-between mb-3">
           <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl"
             style={{ background: `hsl(${c.color} / 0.15)` }}>{c.icon}</div>
-          {isFree && (
-            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-primary/15 text-primary">Бесплатно</span>
-          )}
-          {isLocked && (
-            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-secondary text-muted-foreground flex items-center gap-1">
-              <Icon name="Lock" size={11} /> Закрыто
-            </span>
-          )}
+          <div className="flex flex-col items-end gap-1.5">
+            {isFree && (
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-primary/15 text-primary">Бесплатно</span>
+            )}
+            {isLocked && (
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-secondary text-muted-foreground flex items-center gap-1">
+                <Icon name="Lock" size={11} /> Закрыто
+              </span>
+            )}
+            {needsVpn && (
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-500 flex items-center gap-1">
+                <Icon name="ShieldAlert" size={11} /> Потребуется VPN
+              </span>
+            )}
+          </div>
         </div>
         <div className="font-bold mb-1">{c.title}</div>
         <p className="text-xs text-muted-foreground mb-3 flex-1">{c.desc}</p>
