@@ -29,6 +29,7 @@ const Cabinet = () => {
   const [nameInput, setNameInput] = useState('');
   const [xpAmount, setXpAmount] = useState(500);
   const [payAmount, setPayAmount] = useState(1000);
+  const [tab, setTab] = useState('courses');
 
   useEffect(() => {
     if (!authLoading && !isAuthed) navigate('/login');
@@ -168,7 +169,7 @@ const Cabinet = () => {
           </div>
         </div>
 
-        <Tabs defaultValue="courses">
+        <Tabs value={tab} onValueChange={setTab}>
           <TabsList className="bg-secondary/50 mb-6 flex-wrap h-auto">
             <TabsTrigger value="courses">Мои курсы</TabsTrigger>
             <TabsTrigger value="catalog">Каталог</TabsTrigger>
@@ -184,6 +185,9 @@ const Cabinet = () => {
                 <div className="text-5xl mb-4">📚</div>
                 <h3 className="font-bold text-lg mb-2">Пока нет курсов</h3>
                 <p className="text-muted-foreground mb-5">Загляни в каталог и начни учиться уже сегодня.</p>
+                <Button onClick={() => setTab('catalog')} className="font-semibold">
+                  <Icon name="LayoutGrid" size={16} className="mr-2" /> Перейти в каталог
+                </Button>
               </div>
             ) : (
               my_courses.map((c) => (
