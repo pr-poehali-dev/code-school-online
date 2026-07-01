@@ -114,6 +114,7 @@ const Learn = () => {
 
   const lesson = data.lessons[activeIdx];
   const total = data.lessons.length;
+  const hasExam = data.course.id === 'starter-intro' || data.exam.length > 0;
   const doneCount = data.done_count;
   const progress = Math.round((doneCount / total) * 100);
   const allQuizAnswered = lesson.quiz.length > 0 && lesson.quiz.every((_, i) => answers[i] !== undefined);
@@ -416,24 +417,26 @@ const Learn = () => {
               </button>
             ))}
 
-            {/* Финальный экзамен */}
-            <button
-              onClick={() => setExamMode(true)}
-              className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors text-left mt-2 border-t border-border pt-4
-                ${examMode ? 'bg-accent/10 border border-accent/40' : 'hover:bg-background/50'}
-                ${!data.exam_unlocked ? 'opacity-60' : ''}`}
-            >
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0
-                ${data.exam_result?.passed ? 'bg-primary text-background' : 'bg-accent/20 text-accent'}`}>
-                <Icon name={data.exam_result?.passed ? 'Award' : data.exam_unlocked ? 'GraduationCap' : 'Lock'} size={15} />
-              </div>
-              <div className="min-w-0">
-                <div className="text-sm font-semibold truncate">Финальный экзамен</div>
-                <div className="font-mono text-xs text-muted-foreground">
-                  {data.exam_result ? `результат: ${data.exam_result.percent}%` : `${data.exam.length} вопросов`}
+            {/* Финальный экзамен — показываем только если он есть */}
+            {hasExam && (
+              <button
+                onClick={() => setExamMode(true)}
+                className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors text-left mt-2 border-t border-border pt-4
+                  ${examMode ? 'bg-accent/10 border border-accent/40' : 'hover:bg-background/50'}
+                  ${!data.exam_unlocked ? 'opacity-60' : ''}`}
+              >
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0
+                  ${data.exam_result?.passed ? 'bg-primary text-background' : 'bg-accent/20 text-accent'}`}>
+                  <Icon name={data.exam_result?.passed ? 'Award' : data.exam_unlocked ? 'GraduationCap' : 'Lock'} size={15} />
                 </div>
-              </div>
-            </button>
+                <div className="min-w-0">
+                  <div className="text-sm font-semibold truncate">Финальный экзамен</div>
+                  <div className="font-mono text-xs text-muted-foreground">
+                    {data.exam_result ? `результат: ${data.exam_result.percent}%` : `${data.exam.length} вопросов`}
+                  </div>
+                </div>
+              </button>
+            )}
           </div>
         </div>
       </main>
