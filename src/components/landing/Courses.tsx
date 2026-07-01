@@ -45,6 +45,7 @@ const Courses = () => {
                   {list.map((c, i) => {
                     const isFree = c.price === 0;
                     const isPro = c.tier === 'pro';
+                    const needsVpn = c.tags.some((t) => t.toUpperCase() === 'VPN');
                     return (
                       <div
                         key={c.id}
@@ -71,6 +72,11 @@ const Courses = () => {
                             {isPro && (
                               <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-secondary text-muted-foreground flex items-center gap-1">
                                 <Icon name="Lock" size={11} /> После React
+                              </span>
+                            )}
+                            {needsVpn && (
+                              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-500 flex items-center gap-1">
+                                <Icon name="ShieldAlert" size={11} /> Потребуется VPN
                               </span>
                             )}
                           </div>
