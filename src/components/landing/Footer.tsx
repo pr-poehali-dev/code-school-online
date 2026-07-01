@@ -63,7 +63,7 @@ const Footer = () => {
           <div>
             <div className="font-semibold mb-4">Контакты</div>
             <ul className="space-y-2 text-sm text-muted-foreground font-mono">
-              <li className="flex items-center gap-2"><Icon name="Mail" size={15} /> hello@codebase.ru</li>
+              <li className="flex items-center gap-2"><Icon name="Mail" size={15} /> <a href="mailto:codebaseschool@yandex.ru" className="hover:text-primary transition-colors">codebaseschool@yandex.ru</a></li>
               <li className="flex items-center gap-2"><Icon name="Phone" size={15} /> 8 800 555-35-35</li>
               <li className="flex items-center gap-2"><Icon name="MessageCircle" size={15} /> @codebase_support</li>
             </ul>

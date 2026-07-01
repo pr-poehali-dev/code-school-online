@@ -5,6 +5,7 @@ import {
 
 const TELEGRAM_URL = 'https://t.me/+RFFL7zzQh8I4MmZi';
 const VK_URL = 'https://vk.com';
+const EMAIL = 'codebaseschool@yandex.ru';
 
 const SupportButton = () => (
   <Dialog>
@@ -51,6 +52,17 @@ const SupportButton = () => (
           <div>
             <div className="font-semibold">ВКонтакте</div>
             <div className="text-xs text-muted-foreground">Написать в сообщения сообщества</div>
+          </div>
+          <Icon name="ChevronRight" size={18} className="ml-auto text-muted-foreground" />
+        </a>
+        <a
+          href={`mailto:${EMAIL}`}
+          className="flex items-center gap-3 w-full p-4 rounded-xl border border-border bg-background/40 hover:border-primary/60 hover:bg-primary/5 transition-all"
+        >
+          <Icon name="Mail" size={22} className="text-primary shrink-0" />
+          <div>
+            <div className="font-semibold">Почта</div>
+            <div className="text-xs text-muted-foreground">{EMAIL}</div>
           </div>
           <Icon name="ChevronRight" size={18} className="ml-auto text-muted-foreground" />
         </a>
