@@ -1,4 +1,5 @@
 {
+  "yandex-auth-yandex-auth": "https://functions.poehali.dev/d31d4c36-8b53-4391-9b95-6475d89f9273",
   "robokassa-robokassa-webhook": "https://functions.poehali.dev/8680508e-956a-4640-b09d-032103ac5cc1",
   "robokassa-robokassa": "https://functions.poehali.dev/9a0e4c92-bbc7-4858-968a-e09e4388b7b8",
   "vk-auth-vk-auth": "https://functions.poehali.dev/9451e109-e6b4-41bb-9b9e-147853312695",
